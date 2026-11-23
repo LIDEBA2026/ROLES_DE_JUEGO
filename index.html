@@ -141,7 +141,7 @@
               onchange="state.leagueTitle = this.value; saveLocalStorage();"
               class="bg-transparent hover:bg-white/10 focus:bg-white/15 text-white font-extrabold text-xl tracking-tight rounded-lg px-2 py-0.5 -ml-2 border border-transparent focus:border-court-500 focus:outline-none transition w-full"
             />
-            <p class="text-xs text-slate-300">Equipos en vivo desde Google Sheets + Guardado automático de roles</p>
+            <p class="text-xs text-slate-300">Equipos en vivo desde Google Sheets + Historial anti-repetición</p>
           </div>
         </div>
 
@@ -197,7 +197,7 @@
             onchange="state.weekendLabel = this.value; saveLocalStorage();"
             class="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white font-bold text-lg sm:text-xl rounded-xl px-3 py-1 border border-white/15 focus:border-court-500 focus:outline-none w-full sm:w-96"
           />
-          <p class="text-xs sm:text-sm text-slate-300">Los equipos y sus restricciones se actualizan solos desde tu Google Sheet.</p>
+          <p class="text-xs sm:text-sm text-slate-300">Los equipos y el historial de <span class="font-semibold text-white">ROLES_GUARDADOS</span> se sincronizan automáticamente.</p>
         </div>
 
         <button onclick="generateSchedule()" class="px-6 py-3.5 rounded-xl bg-court-600 hover:bg-court-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-court-600/30 flex items-center justify-center gap-2.5 transition transform active:scale-95">
@@ -213,8 +213,8 @@
           <span class="text-xs font-extrabold text-slate-900">Google Sheet en vivo</span>
           <span id="sheet-live-status" class="text-xs text-slate-500">Conectando automáticamente con tu hoja...</span>
         </div>
-        <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
-          Restricciones desde Sheet
+        <span id="sheet-history-status" class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+          ROLES_GUARDADOS: sincronizando...
         </span>
       </div>
 
@@ -253,8 +253,8 @@
           <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
             <input type="checkbox" id="rule-avoid-rematch" checked onchange="updateRuleToggle('avoidRematch', this.checked)" class="mt-0.5 w-4 h-4 text-court-600 rounded border-slate-300" />
             <div class="text-xs">
-              <span class="block font-bold text-slate-800">Evitar repetir partidos de jornadas guardadas</span>
-              <span class="text-slate-500">Cruza primero a equipos que no se han enfrentado en el historial.</span>
+              <span class="block font-bold text-slate-800">Evitar repetir partidos de ROLES_GUARDADOS e historial</span>
+              <span class="text-slate-500">Cruza primero a equipos que no se han enfrentado en tu hoja ni en jornadas guardadas.</span>
             </div>
           </label>
           <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
@@ -367,7 +367,7 @@
               <i data-lucide="folder-kanban" class="w-5 h-5 text-court-600"></i>
               <span>Historial de Jornadas Guardadas</span>
             </h3>
-            <p class="text-xs sm:text-sm text-slate-500">Cada jornada guardada evita que sus enfrentamientos se repitan en roles nuevos.</p>
+            <p class="text-xs sm:text-sm text-slate-500">Combina los registros de <span class="font-semibold text-slate-700">ROLES_GUARDADOS</span> en tu Google Sheet y tu historial local para no repetir partidos.</p>
           </div>
           <span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-800">
             Total: <span id="total-saved-jornadas-text">0</span> jornadas
@@ -399,15 +399,20 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'lideba_app_state_v4';
+    const STORAGE_KEY = 'lideba_app_state_v5';
     const LIVE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjdrdk1PbdVZszD9aKiZFqb4eflydLxFnGeNN5xhIgivmm9oRfye7qtj5RYKY7hrfOtwoXnXRjTbGb/pub?output=csv";
+    // Opcional: si publicas la pestaña ROLES_GUARDADOS como CSV aparte, pega aquí su URL. Si queda vacío, intenta leer ROLES_GUARDADOS vía gviz y Apps Script.
+    const SAVED_ROLES_CSV_URL = "";
     const SHEETS_SAVE_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxKcXGmW37qW_TS7SRuiRhaTYVxfMy5r_MaNi8f5FXX90HmnEB42grWOAOeBUNB2Z9W/exec";
     const SHEETS_TARGET_TAB = "ROLES_GUARDADOS";
     const RESTRICTED_TIMESLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
     const AUTO_POLL_MS = 10000;
 
     let lastSheetSignature = "";
+    let lastSavedRolesSignature = "";
     let isPollingSheet = false;
+    let sheetPlayedMatchupsCount = {};
+    let sheetSavedJornadas = [];
 
     let state = {
       leagueTitle: "LIDEBA",
@@ -461,6 +466,33 @@
       }, 3500);
     }
 
+    function getAllCombinedJornadas() {
+      let byTitle = new Map();
+      sheetSavedJornadas.forEach(j => {
+        byTitle.set((j.title || '').toLowerCase(), { ...j, source: 'sheet' });
+      });
+      state.savedJornadas.forEach(j => {
+        let key = (j.title || '').toLowerCase();
+        let existing = byTitle.get(key);
+        if (existing) {
+          let mergedMatches = [...existing.matches];
+          j.matches.forEach(m => {
+            let existsMatch = mergedMatches.some(em =>
+              em.category === m.category &&
+              em.rama === m.rama &&
+              em.time === m.time &&
+              [em.homeTeam, em.awayTeam].sort().join('___') === [m.homeTeam, m.awayTeam].sort().join('___')
+            );
+            if (!existsMatch) mergedMatches.push(m);
+          });
+          byTitle.set(key, { ...j, matches: mergedMatches, source: 'both' });
+        } else {
+          byTitle.set(key, { ...j, source: 'local' });
+        }
+      });
+      return Array.from(byTitle.values());
+    }
+
     function renderAll() {
       document.getElementById('league-title-input').value = state.leagueTitle;
       document.getElementById('weekend-label-input').value = state.weekendLabel;
@@ -478,13 +510,14 @@
 
     function updateBadges() {
       let activeCount = Object.values(state.activeTeams).filter(t => t.active).length;
+      let combinedCount = getAllCombinedJornadas().length;
       document.getElementById('badge-weekend-active').innerText = `${activeCount} eq.`;
       document.getElementById('badge-schedule-count').innerText = state.currentSchedule.length;
-      document.getElementById('badge-saved-jornadas').innerText = `${state.savedJornadas.length} jorn.`;
+      document.getElementById('badge-saved-jornadas').innerText = `${combinedCount} jorn.`;
       document.getElementById('forced-matches-count').innerText = state.forcedMatches.length;
     }
 
-    function fetchSheetViaJsonp(rawUrl) {
+    function fetchSheetViaJsonp(rawUrl, sheetTabName = "") {
       return new Promise((resolve, reject) => {
         let pubMatch = rawUrl.match(/\/spreadsheets\/d\/e\/([a-zA-Z0-9-_]+)/);
         let stdMatch = rawUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
@@ -497,6 +530,9 @@
         if (!baseUrl) {
           reject(new Error("URL no compatible con JSONP"));
           return;
+        }
+        if (sheetTabName) {
+          baseUrl += `&sheet=${encodeURIComponent(sheetTabName)}`;
         }
 
         let cbName = "lidebaGvizCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
@@ -533,6 +569,40 @@
         script.onerror = () => {
           cleanup();
           reject(new Error("Error de red al cargar JSONP"));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    function fetchSavedRolesViaAppsScript() {
+      return new Promise((resolve) => {
+        if (!SHEETS_SAVE_WEBHOOK_URL || SHEETS_SAVE_WEBHOOK_URL.includes("PEGA_AQUI")) {
+          resolve(null);
+          return;
+        }
+        let cbName = "lidebaAppsScriptCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        let script = document.createElement('script');
+        let timer = setTimeout(() => {
+          cleanup();
+          resolve(null);
+        }, 6000);
+
+        function cleanup() {
+          clearTimeout(timer);
+          if (script.parentNode) script.parentNode.removeChild(script);
+          delete window[cbName];
+        }
+
+        window[cbName] = function(data) {
+          cleanup();
+          resolve(Array.isArray(data) ? data : (data?.rows || data?.matches || null));
+        };
+
+        let sep = SHEETS_SAVE_WEBHOOK_URL.includes('?') ? '&' : '?';
+        script.src = `${SHEETS_SAVE_WEBHOOK_URL}${sep}action=read&sheet=${encodeURIComponent(SHEETS_TARGET_TAB)}&callback=${cbName}&_t=${Date.now()}`;
+        script.onerror = () => {
+          cleanup();
+          resolve(null);
         };
         document.body.appendChild(script);
       });
@@ -621,6 +691,154 @@
       return parsedMap;
     }
 
+    function parseSavedRolesCSV(csvText) {
+      let lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length < 2) return { counts: {}, jornadas: [], totalMatches: 0 };
+
+      let headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      let idxJornada = headers.findIndex(h => h.includes('jornada') || h.includes('fecha') || h.includes('titulo'));
+      let idxCat = headers.findIndex(h => h.includes('cat'));
+      let idxRama = headers.findIndex(h => h.includes('rama'));
+      let idxHora = headers.findIndex(h => h.includes('hora') || h.includes('time'));
+      let idxCancha = headers.findIndex(h => h.includes('cancha') || h.includes('court'));
+      let idxLocal = headers.findIndex(h => h.includes('local') || h.includes('home'));
+      let idxVisit = headers.findIndex(h => h.includes('visit') || h.includes('away'));
+
+      let counts = {};
+      let jornadasMap = {};
+      let totalMatches = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        let cols = parseCSVLine(lines[i]);
+        let jornadaTitle = (cols[idxJornada >= 0 ? idxJornada : 0] || "Jornada Guardada (Sheet)").trim();
+        let cat = (cols[idxCat >= 0 ? idxCat : 1] || "").trim();
+        let rawRama = (cols[idxRama >= 0 ? idxRama : 2] || "VARONIL").toUpperCase();
+        let rama = rawRama.includes("FEM") ? "FEMENIL" : "VARONIL";
+        let time = (cols[idxHora >= 0 ? idxHora : 3] || "08:00").trim();
+        let court = (cols[idxCancha >= 0 ? idxCancha : 4] || "Cancha 1").trim();
+        let homeTeam = (cols[idxLocal >= 0 ? idxLocal : 5] || "").trim();
+        let awayTeam = (cols[idxVisit >= 0 ? idxVisit : 6] || "").trim();
+
+        if (!homeTeam || !awayTeam) continue;
+        totalMatches++;
+
+        let pairKey = [homeTeam, awayTeam].sort().join('___') + `|${rama}|${cat}`;
+        counts[pairKey] = (counts[pairKey] || 0) + 1;
+
+        let jKey = jornadaTitle.toLowerCase();
+        if (!jornadasMap[jKey]) {
+          jornadasMap[jKey] = {
+            id: 'sheet_j_' + btoa(unescape(encodeURIComponent(jKey))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) + '_' + i,
+            title: jornadaTitle,
+            date: "Google Sheet",
+            matches: []
+          };
+        }
+
+        jornadasMap[jKey].matches.push({
+          id: 'sm_' + i,
+          rama,
+          category: cat,
+          day: "Sábado",
+          time,
+          court,
+          homeTeam,
+          homeClub: homeTeam,
+          awayTeam,
+          awayClub: awayTeam
+        });
+      }
+
+      return { counts, jornadas: Object.values(jornadasMap), totalMatches };
+    }
+
+    function parseSavedRolesRowsArray(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) return { counts: {}, jornadas: [], totalMatches: 0 };
+      let csvLines = [];
+      rows.forEach(r => {
+        if (Array.isArray(r)) {
+          csvLines.push(r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(","));
+        } else if (r && typeof r === 'object') {
+          let vals = [
+            r.jornada ?? r.Jornada ?? '',
+            r.categoria ?? r.categoría ?? r['Categoría'] ?? '',
+            r.rama ?? r.Rama ?? '',
+            r.hora ?? r.Hora ?? '',
+            r.cancha ?? r.Cancha ?? '',
+            r.local ?? r.Local ?? '',
+            r.visitante ?? r.Visitante ?? ''
+          ];
+          csvLines.push(vals.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        }
+      });
+      if (csvLines.length === 0) return { counts: {}, jornadas: [], totalMatches: 0 };
+      let hasHeader = csvLines[0].toLowerCase().includes('jornada') && csvLines[0].toLowerCase().includes('local');
+      let finalCsv = hasHeader
+        ? csvLines.join("\n")
+        : `"Jornada","Categoría","Rama","Hora","Cancha","Local","Visitante"\n` + csvLines.join("\n");
+      return parseSavedRolesCSV(finalCsv);
+    }
+
+    async function syncSavedRolesFromSheet(isBackground = true) {
+      let statusBadge = document.getElementById('sheet-history-status');
+      let csvText = "";
+      let parsed = null;
+
+      try {
+        if (SAVED_ROLES_CSV_URL && SAVED_ROLES_CSV_URL.trim() !== "") {
+          let url = `${SAVED_ROLES_CSV_URL}${SAVED_ROLES_CSV_URL.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+          let res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) {
+            let txt = await res.text();
+            if (!txt.trim().startsWith("<!DOCTYPE") && !txt.trim().startsWith("<html")) {
+              csvText = txt;
+            }
+          }
+        }
+
+        if (!csvText) {
+          csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL, SHEETS_TARGET_TAB);
+        }
+
+        if (csvText && csvText.trim().length > 0) {
+          parsed = parseSavedRolesCSV(csvText);
+        }
+      } catch (e) {
+        parsed = null;
+      }
+
+      if (!parsed || parsed.totalMatches === 0) {
+        let appScriptRows = await fetchSavedRolesViaAppsScript();
+        if (appScriptRows && appScriptRows.length > 0) {
+          parsed = parseSavedRolesRowsArray(appScriptRows);
+        }
+      }
+
+      if (parsed) {
+        let sig = JSON.stringify({ c: parsed.counts, t: parsed.totalMatches });
+        let changed = sig !== lastSavedRolesSignature && lastSavedRolesSignature !== "";
+        lastSavedRolesSignature = sig;
+        sheetPlayedMatchupsCount = parsed.counts || {};
+        sheetSavedJornadas = parsed.jornadas || [];
+
+        updateBadges();
+        if (!document.getElementById('tab-standings').classList.contains('hidden')) {
+          renderHistoryTab();
+        }
+        if (!document.getElementById('tab-schedule').classList.contains('hidden')) {
+          renderScheduleTab();
+        }
+        if (changed && isBackground) {
+          showToast(`Historial de ROLES_GUARDADOS sincronizado (${parsed.totalMatches} partidos)`);
+        }
+        if (statusBadge) {
+          statusBadge.innerText = `ROLES_GUARDADOS: ${parsed.totalMatches} partidos • ${sheetSavedJornadas.length} jorn.`;
+        }
+      } else if (statusBadge) {
+        statusBadge.innerText = `ROLES_GUARDADOS: ${Object.keys(sheetPlayedMatchupsCount).length} duelos en caché`;
+      }
+    }
+
     async function pollGoogleSheetLive(isBackground = true) {
       if (isPollingSheet) return;
       isPollingSheet = true;
@@ -667,6 +885,7 @@
           statusEl.innerText = "Esperando respuesta del Sheet (reintentando automáticamente)...";
         }
       } finally {
+        await syncSavedRolesFromSheet(isBackground);
         isPollingSheet = false;
       }
     }
@@ -838,7 +1057,7 @@
     }
 
     function getPlayedMatchupsCount() {
-      let countMap = {};
+      let countMap = { ...sheetPlayedMatchupsCount };
       state.savedJornadas.forEach(j => {
         j.matches.forEach(m => {
           let pairKey = [m.homeTeam, m.awayTeam].sort().join('___') + `|${m.rama}|${m.category}`;
@@ -1246,7 +1465,7 @@
     }
 
     function copySelectedJornadaForSheets() {
-      let j = state.savedJornadas.find(x => x.id === state.activeJornadaId);
+      let j = getAllCombinedJornadas().find(x => x.id === state.activeJornadaId);
       if (!j) return;
       let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\n";
       j.matches.forEach(m => {
@@ -1310,6 +1529,7 @@
 
       if (sheetResult.sent) {
         showToast(`¡"${titleToSave}" guardada y enviada a ${SHEETS_TARGET_TAB} en Google Sheets!`);
+        setTimeout(() => syncSavedRolesFromSheet(false), 1500);
       } else if (sheetResult.reason === "missing_url") {
         showToast(`"${titleToSave}" guardada localmente. Falta configurar la URL de Apps Script.`, 'error');
       } else {
@@ -1319,7 +1539,7 @@
 
     function loadJornadaIntoCurrentView(id, e) {
       e.stopPropagation();
-      let j = state.savedJornadas.find(x => x.id === id);
+      let j = getAllCombinedJornadas().find(x => x.id === id);
       if (!j) return;
       state.weekendLabel = j.title;
       state.currentSchedule = JSON.parse(JSON.stringify(j.matches));
@@ -1331,15 +1551,20 @@
 
     function deleteSavedJornada(id, e) {
       e.stopPropagation();
-      if (!confirm("¿Eliminar esta jornada del historial? Sus partidos volverán a estar disponibles como duelos nuevos.")) return;
+      let isLocal = state.savedJornadas.some(j => j.id === id);
+      if (!isLocal) {
+        showToast('Esta jornada proviene de Google Sheets; edítala directamente en ROLES_GUARDADOS.', 'error');
+        return;
+      }
+      if (!confirm("¿Eliminar esta jornada del historial local? Sus partidos volverán a estar disponibles como duelos nuevos.")) return;
       state.savedJornadas = state.savedJornadas.filter(j => j.id !== id);
       if (state.activeJornadaId === id) {
-        state.activeJornadaId = state.savedJornadas[0]?.id || null;
+        state.activeJornadaId = getAllCombinedJornadas()[0]?.id || null;
       }
       saveLocalStorage();
       updateBadges();
       renderHistoryTab();
-      showToast('Jornada eliminada del historial');
+      showToast('Jornada eliminada del historial local');
     }
 
     function renderHistoryTab() {
@@ -1349,25 +1574,34 @@
 
     function renderSavedJornadasList() {
       let list = document.getElementById('saved-jornadas-list');
-      document.getElementById('total-saved-jornadas-text').innerText = state.savedJornadas.length;
-      if (state.savedJornadas.length === 0) {
-        list.innerHTML = `<p class="col-span-full text-xs text-slate-400 italic">No hay jornadas guardadas todavía.</p>`;
+      let allJornadas = getAllCombinedJornadas();
+      document.getElementById('total-saved-jornadas-text').innerText = allJornadas.length;
+      if (allJornadas.length === 0) {
+        list.innerHTML = `<p class="col-span-full text-xs text-slate-400 italic">No hay jornadas guardadas todavía en ROLES_GUARDADOS ni en tu historial local.</p>`;
         return;
       }
-      list.innerHTML = state.savedJornadas.map(j => `
+      list.innerHTML = allJornadas.map(j => {
+        let isLocal = state.savedJornadas.some(lj => lj.id === j.id);
+        let badgeSource = j.source === 'sheet'
+          ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-bold">Sheet</span>'
+          : j.source === 'both'
+          ? '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold">Sheet + Local</span>'
+          : '<span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[9px] font-bold">Local</span>';
+        return `
         <div onclick="selectJornadaDetail('${j.id}')" class="p-3.5 rounded-xl border cursor-pointer transition flex items-center justify-between gap-2 ${state.activeJornadaId === j.id ? 'bg-court-50 border-court-300 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}">
           <div>
-            <span class="font-bold text-slate-900 text-xs block">${j.title}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-slate-900 text-xs block">${j.title}</span>
+              ${badgeSource}
+            </div>
             <span class="text-[10px] text-court-600 font-semibold">${j.matches.length} partidos • ${j.date}</span>
           </div>
           <div class="flex items-center gap-1">
             <button onclick="loadJornadaIntoCurrentView('${j.id}', event)" class="px-2 py-1 rounded-lg bg-white border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-200" title="Ver en Pestaña 2">Ver Rol</button>
-            <button onclick="deleteSavedJornada('${j.id}', event)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Eliminar jornada">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
+            ${isLocal ? `<button onclick="deleteSavedJornada('${j.id}', event)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Eliminar jornada local"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
           </div>
         </div>
-      `).join('');
+      `}).join('');
       lucide.createIcons();
     }
 
@@ -1378,7 +1612,7 @@
     }
 
     function renderJornadaDetail() {
-      let j = state.savedJornadas.find(x => x.id === state.activeJornadaId);
+      let j = getAllCombinedJornadas().find(x => x.id === state.activeJornadaId);
       let container = document.getElementById('jornada-detail-container');
       let btnCopy = document.getElementById('btn-copy-selected-jornada');
 
@@ -1410,7 +1644,7 @@
     }
 
     function loadLocalStorage() {
-      let saved = localStorage.getItem(STORAGE_KEY);
+      let saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('lideba_app_state_v4');
       if (saved) {
         try {
           let parsed = JSON.parse(saved);
