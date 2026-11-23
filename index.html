@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LIDEBA - Generador de Roles de Juego</title>
+  <title>LIDEBA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,17 +41,15 @@
 
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0 no-print"></div>
 
-  <!-- Forced Match Modal -->
   <div id="forced-match-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
           <i data-lucide="handshake" class="w-5 h-5 text-court-600"></i>
-          <span>Forzar Partido Específico</span>
+          <span>Forzar Partido</span>
         </h3>
         <button onclick="closeForcedMatchModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <p class="text-xs text-slate-500">Obliga a que dos equipos se enfrenten en la próxima jornada (por categoría).</p>
 
       <div class="space-y-3">
         <div>
@@ -68,11 +66,10 @@
             <select id="forced-team2-select" class="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-semibold bg-white"></select>
           </div>
         </div>
-        <button onclick="addForcedMatch()" class="w-full py-2.5 rounded-xl bg-court-600 hover:bg-court-700 text-white font-bold text-xs transition">Agregar Emparejamiento Forzado</button>
+        <button onclick="addForcedMatch()" class="w-full py-2.5 rounded-xl bg-court-600 hover:bg-court-700 text-white font-bold text-xs transition">Agregar</button>
       </div>
 
       <div class="border-t border-slate-100 pt-3">
-        <h4 class="text-xs font-bold text-slate-700 mb-2">Emparejamientos Activos:</h4>
         <div id="forced-matches-list" class="space-y-1.5 max-h-32 overflow-y-auto"></div>
       </div>
 
@@ -82,13 +79,12 @@
     </div>
   </div>
 
-  <!-- Manual Match Modal -->
   <div id="manual-match-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
           <i data-lucide="plus-circle" class="w-5 h-5 text-court-600"></i>
-          <span>Agregar Partido Manual</span>
+          <span>Partido Manual</span>
         </h3>
         <button onclick="closeAddManualMatchModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
@@ -119,12 +115,11 @@
             <select id="manual-match-away" class="w-full rounded-xl border border-slate-300 p-2 font-semibold bg-white"></select>
           </div>
         </div>
-        <button onclick="confirmAddManualMatch()" class="w-full py-2.5 rounded-xl bg-court-600 hover:bg-court-700 text-white font-bold transition">Añadir al Rol</button>
+        <button onclick="confirmAddManualMatch()" class="w-full py-2.5 rounded-xl bg-court-600 hover:bg-court-700 text-white font-bold transition">Añadir</button>
       </div>
     </div>
   </div>
 
-  <!-- Header -->
   <header class="bg-navy-900 text-white shadow-lg sticky top-0 z-30 no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -137,43 +132,42 @@
               id="league-title-input"
               type="text"
               value="LIDEBA"
-              aria-label="Nombre de la Liga"
+              aria-label="Liga"
               onchange="state.leagueTitle = this.value; saveLocalStorage();"
               class="bg-transparent hover:bg-white/10 focus:bg-white/15 text-white font-extrabold text-xl tracking-tight rounded-lg px-2 py-0.5 -ml-2 border border-transparent focus:border-court-500 focus:outline-none transition w-full"
             />
-            <p class="text-xs text-slate-300">Equipos en vivo desde Google Sheets + Historial anti-repetición</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="exportSeasonBackup()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span>Respaldo JSON</span>
+            <span>JSON</span>
           </button>
           <label class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition cursor-pointer">
             <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-            <span>Cargar JSON</span>
+            <span>JSON</span>
             <input type="file" accept=".json" class="hidden" onchange="importSeasonBackup(event)" />
           </label>
         </div>
       </div>
 
-      <nav class="flex gap-2 mt-4 overflow-x-auto pb-1" aria-label="Secciones principales">
+      <nav class="flex gap-2 mt-4 overflow-x-auto pb-1">
         <button onclick="switchTab('weekend')" id="tab-btn-weekend" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap bg-court-600 text-white shadow">
           <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-          <span>1. Configurar Sábado</span>
+          <span>1. Sábado</span>
           <span id="badge-weekend-active" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">0 eq.</span>
         </button>
 
         <button onclick="switchTab('schedule')" id="tab-btn-schedule" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap text-slate-300 hover:bg-white/10">
           <i data-lucide="calendar-days" class="w-4 h-4"></i>
-          <span>2. Rol por Categoría & Sheets</span>
+          <span>2. Rol</span>
           <span id="badge-schedule-count" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">0</span>
         </button>
 
         <button onclick="switchTab('standings')" id="tab-btn-standings" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap text-slate-300 hover:bg-white/10">
           <i data-lucide="history" class="w-4 h-4"></i>
-          <span>3. Historial y Posiciones</span>
+          <span>3. Historial</span>
           <span id="badge-saved-jornadas" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">0 jorn.</span>
         </button>
       </nav>
@@ -182,14 +176,9 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- ================= TAB 1: CONFIGURAR SÁBADO ================= -->
     <section id="tab-weekend" class="space-y-6">
       <div class="bg-gradient-to-r from-navy-900 to-navy-800 rounded-2xl p-5 sm:p-6 text-white shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div class="space-y-1.5 flex-1">
-          <div class="flex items-center gap-2 text-court-500 text-xs font-bold uppercase tracking-wider">
-            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
-            <span>Preparar Sábado</span>
-          </div>
           <input
             id="weekend-label-input"
             type="text"
@@ -197,50 +186,41 @@
             onchange="state.weekendLabel = this.value; saveLocalStorage();"
             class="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white font-bold text-lg sm:text-xl rounded-xl px-3 py-1 border border-white/15 focus:border-court-500 focus:outline-none w-full sm:w-96"
           />
-          <p class="text-xs sm:text-sm text-slate-300">Los equipos y el historial de <span class="font-semibold text-white">ROLES_GUARDADOS</span> se sincronizan automáticamente.</p>
         </div>
 
         <button onclick="generateSchedule()" class="px-6 py-3.5 rounded-xl bg-court-600 hover:bg-court-500 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-court-600/30 flex items-center justify-center gap-2.5 transition transform active:scale-95">
           <i data-lucide="wand-2" class="w-5 h-5"></i>
-          <span>Generar Rol sin Repetir</span>
+          <span>Generar Rol</span>
         </button>
       </div>
 
-      <!-- Live Google Sheet Status Banner -->
       <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div class="flex items-center gap-2.5">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          <span class="text-xs font-extrabold text-slate-900">Google Sheet en vivo</span>
-          <span id="sheet-live-status" class="text-xs text-slate-500">Conectando automáticamente con tu hoja...</span>
+          <span class="text-xs font-extrabold text-slate-900">Google Sheet</span>
+          <span id="sheet-live-status" class="text-xs text-slate-500">...</span>
         </div>
         <span id="sheet-history-status" class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
-          ROLES_GUARDADOS: sincronizando...
+          0
         </span>
       </div>
 
-      <!-- Config Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
           <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
             <i data-lucide="map-pin" class="w-4 h-4 text-court-600"></i>
-            <span>1. Canchas y Día de Juego</span>
+            <span>Canchas</span>
           </h3>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Número de Canchas</label>
             <div class="flex items-center gap-2">
               <input type="number" id="courts-count-input" min="1" max="15" value="3" onchange="updateCourtsCount(this.value)" class="w-20 rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-center focus:ring-2 focus:ring-court-500 focus:outline-none" />
-              <span class="text-xs text-slate-500">canchas simultáneas</span>
             </div>
             <div id="court-names-container" class="mt-2.5 flex flex-wrap gap-1.5"></div>
           </div>
           <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Día Asignado</label>
-              <div id="days-checkboxes" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div class="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-              <span class="font-bold text-slate-700 block">Horario Restringido:</span>
-              <span>08:00 AM a 04:00 PM</span>
+            <div id="days-checkboxes" class="flex flex-wrap gap-2"></div>
+            <div class="text-xs font-bold text-slate-700 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+              08:00 - 16:00
             </div>
           </div>
         </div>
@@ -248,55 +228,33 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
           <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
             <i data-lucide="cpu" class="w-4 h-4 text-court-600"></i>
-            <span>2. Reglas Automáticas</span>
+            <span>Reglas</span>
           </h3>
-          <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
-            <input type="checkbox" id="rule-avoid-rematch" checked onchange="updateRuleToggle('avoidRematch', this.checked)" class="mt-0.5 w-4 h-4 text-court-600 rounded border-slate-300" />
-            <div class="text-xs">
-              <span class="block font-bold text-slate-800">Evitar repetir partidos de ROLES_GUARDADOS e historial</span>
-              <span class="text-slate-500">Cruza primero a equipos que no se han enfrentado en tu hoja ni en jornadas guardadas.</span>
-            </div>
+          <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+            <input type="checkbox" id="rule-avoid-rematch" checked onchange="updateRuleToggle('avoidRematch', this.checked)" class="w-4 h-4 text-court-600 rounded border-slate-300" />
+            <span class="text-xs font-bold text-slate-800">Sin repetir por categoría</span>
           </label>
-          <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
-            <input type="checkbox" id="rule-avoid-same-club-match" checked onchange="updateRuleToggle('avoidSameClubMatchup', this.checked)" class="mt-0.5 w-4 h-4 text-court-600 rounded border-slate-300" />
-            <div class="text-xs">
-              <span class="block font-bold text-slate-800">Evitar duelo interno del mismo club</span>
-              <span class="text-slate-500">Ej. Halcones Advance vs Rise.</span>
-            </div>
+          <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+            <input type="checkbox" id="rule-avoid-same-club-match" checked onchange="updateRuleToggle('avoidSameClubMatchup', this.checked)" class="w-4 h-4 text-court-600 rounded border-slate-300" />
+            <span class="text-xs font-bold text-slate-800">Evitar mismo club</span>
           </label>
           <button onclick="openForcedMatchModal()" class="w-full py-2.5 px-3 rounded-xl border border-dashed border-navy-800/40 hover:border-court-600 hover:bg-court-500/5 text-navy-900 text-xs font-bold flex items-center justify-center gap-2 transition">
             <i data-lucide="handshake" class="w-4 h-4 text-court-600"></i>
-            <span>Forzar Partido Específico (<span id="forced-matches-count">0</span>)</span>
+            <span>Forzar (<span id="forced-matches-count">0</span>)</span>
           </button>
         </div>
       </div>
 
-      <!-- Club Cards Grid -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <i data-lucide="check-square" class="w-5 h-5 text-court-600"></i>
-              <span>Selección de Equipos por Rama</span>
-            </h3>
-            <p class="text-xs sm:text-sm text-slate-500">Reflejando en tiempo real los equipos de tu Google Sheet. Las restricciones se toman de la hoja.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button onclick="setAllFilteredTeamsActive(true)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">Marcar visibles</button>
-            <button onclick="setAllFilteredTeamsActive(false)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">Desmarcar visibles</button>
-          </div>
-        </div>
-
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-bold text-slate-700 ml-1">Filtrar Rama:</span>
             <button onclick="setRamaFilter('ALL')" id="filter-btn-ALL" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-navy-900 text-white">Todos</button>
-            <button onclick="setRamaFilter('VARONIL')" id="filter-btn-VARONIL" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-700 border border-slate-300">🏀 Varonil / Mixto</button>
-            <button onclick="setRamaFilter('FEMENIL')" id="filter-btn-FEMENIL" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-700 border border-slate-300">🌸 Femenil</button>
+            <button onclick="setRamaFilter('VARONIL')" id="filter-btn-VARONIL" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-700 border border-slate-300">Varonil</button>
+            <button onclick="setRamaFilter('FEMENIL')" id="filter-btn-FEMENIL" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-slate-700 border border-slate-300">Femenil</button>
           </div>
           <div class="relative w-full sm:w-60">
             <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-            <input type="text" id="weekend-search-club" oninput="renderWeekendClubs()" placeholder="Filtrar club o equipo..." class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-court-500 bg-white" />
+            <input type="text" id="weekend-search-club" oninput="renderWeekendClubs()" placeholder="Buscar..." class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-court-500 bg-white" />
           </div>
         </div>
 
@@ -304,38 +262,36 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: ROL POR CATEGORÍA & SHEETS ================= -->
     <section id="tab-schedule" class="hidden space-y-6">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 no-print">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-wrap items-center gap-2">
-            <button onclick="copyScheduleForGoogleSheets()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 transition" title="Copiar para pegar directo en Google Sheets (Ctrl+V)">
+            <button onclick="copyScheduleForGoogleSheets()" class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 transition">
               <i data-lucide="table" class="w-4 h-4 text-emerald-600"></i>
-              <span>Copiar para Google Sheets</span>
+              <span>Copiar Sheets</span>
             </button>
             <button id="btn-save-jornada" onclick="saveCurrentScheduleToHistory()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition">
               <i data-lucide="save" class="w-4 h-4 text-court-500"></i>
-              <span>Guardar Jornada (Para no repetir)</span>
+              <span>Guardar</span>
             </button>
             <button onclick="openAddManualMatchModal()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition">
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Partido Manual</span>
+              <span>Manual</span>
             </button>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-          <span class="text-xs font-bold text-slate-500 uppercase mr-1">Filtrar vista:</span>
           <select id="sched-filter-rama" onchange="renderScheduleTab()" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold bg-white">
-            <option value="ALL">Todas las Ramas</option>
-            <option value="VARONIL">Varonil / Mixto</option>
+            <option value="ALL">Ramas</option>
+            <option value="VARONIL">Varonil</option>
             <option value="FEMENIL">Femenil</option>
           </select>
           <select id="sched-filter-cat" onchange="renderScheduleTab()" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold bg-white">
-            <option value="ALL">Todas las Categorías</option>
+            <option value="ALL">Categorías</option>
           </select>
           <select id="sched-filter-club" onchange="renderScheduleTab()" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold bg-white">
-            <option value="ALL">Todos los Clubes</option>
+            <option value="ALL">Clubes</option>
           </select>
         </div>
       </div>
@@ -346,7 +302,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-navy-900 pb-4 mb-6 gap-2">
           <div>
             <h2 id="print-league-name" class="text-2xl font-black text-navy-900 tracking-tight">LIDEBA</h2>
-            <p id="print-jornada-name" class="text-sm font-bold text-court-600">Rol Oficial de Juegos por Categoría</p>
+            <p id="print-jornada-name" class="text-sm font-bold text-court-600"></p>
           </div>
           <div class="text-left sm:text-right text-xs text-slate-500">
             <p id="print-timestamp"></p>
@@ -358,19 +314,15 @@
       </div>
     </section>
 
-    <!-- ================= TAB 3: HISTORIAL DE JORNADAS ================= -->
     <section id="tab-standings" class="hidden space-y-6">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div>
-            <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <i data-lucide="folder-kanban" class="w-5 h-5 text-court-600"></i>
-              <span>Historial de Jornadas Guardadas</span>
-            </h3>
-            <p class="text-xs sm:text-sm text-slate-500">Combina los registros de <span class="font-semibold text-slate-700">ROLES_GUARDADOS</span> en tu Google Sheet y tu historial local para no repetir partidos.</p>
-          </div>
+          <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+            <i data-lucide="folder-kanban" class="w-5 h-5 text-court-600"></i>
+            <span>ROLES_GUARDADOS</span>
+          </h3>
           <span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-800">
-            Total: <span id="total-saved-jornadas-text">0</span> jornadas
+            <span id="total-saved-jornadas-text">0</span>
           </span>
         </div>
 
@@ -379,29 +331,23 @@
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div>
-            <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <i data-lucide="list-checks" class="w-4 h-4 text-court-600"></i>
-              <span id="active-jornada-title-label">Detalle de Jornada Seleccionada</span>
-            </h3>
-            <p class="text-xs text-slate-500">Revisa los partidos registrados o cópialos directo a Google Sheets.</p>
-          </div>
+          <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <i data-lucide="list-checks" class="w-4 h-4 text-court-600"></i>
+            <span id="active-jornada-title-label"></span>
+          </h3>
           <button onclick="copySelectedJornadaForSheets()" id="btn-copy-selected-jornada" class="hidden px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 transition">
             <i data-lucide="table" class="w-4 h-4 text-emerald-600"></i>
-            <span>Copiar Jornada a Sheets</span>
+            <span>Copiar</span>
           </button>
         </div>
-        <div id="jornada-detail-container" class="space-y-2 max-h-96 overflow-y-auto pr-1">
-          <p class="text-xs text-slate-400 italic">Selecciona una jornada guardada arriba para ver sus partidos.</p>
-        </div>
+        <div id="jornada-detail-container" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </section>
   </main>
 
   <script>
-    const STORAGE_KEY = 'lideba_app_state_v5';
+    const STORAGE_KEY = 'lideba_sheets_only_v1';
     const LIVE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjdrdk1PbdVZszD9aKiZFqb4eflydLxFnGeNN5xhIgivmm9oRfye7qtj5RYKY7hrfOtwoXnXRjTbGb/pub?output=csv";
-    // Opcional: si publicas la pestaña ROLES_GUARDADOS como CSV aparte, pega aquí su URL. Si queda vacío, intenta leer ROLES_GUARDADOS vía gviz y Apps Script.
     const SAVED_ROLES_CSV_URL = "";
     const SHEETS_SAVE_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxKcXGmW37qW_TS7SRuiRhaTYVxfMy5r_MaNi8f5FXX90HmnEB42grWOAOeBUNB2Z9W/exec";
     const SHEETS_TARGET_TAB = "ROLES_GUARDADOS";
@@ -413,6 +359,7 @@
     let isPollingSheet = false;
     let sheetPlayedMatchupsCount = {};
     let sheetSavedJornadas = [];
+    let sheetSyncedSuccessfully = false;
 
     let state = {
       leagueTitle: "LIDEBA",
@@ -424,10 +371,38 @@
       activeTeams: {},
       forcedMatches: [],
       currentSchedule: [],
-      savedJornadas: [],
       activeJornadaId: null,
       selectedRamaFilter: 'ALL'
     };
+
+    function normalizeKeyPart(val) {
+      return (val || "").toString().trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function buildMatchupKey(teamA, teamB, rama, category) {
+      let a = normalizeKeyPart(teamA);
+      let b = normalizeKeyPart(teamB);
+      let r = normalizeKeyPart(rama || "VARONIL").includes("fem") ? "femenil" : "varonil";
+      let c = normalizeKeyPart(category);
+      return [a, b].sort().join('___') + `|${r}|${c}`;
+    }
+
+    function normalizeTimeToAllowedWindow(rawTime) {
+      let s = (rawTime || "08:00").toString().trim();
+      if (s.includes("T")) {
+        let dt = new Date(s);
+        if (!isNaN(dt.getTime())) {
+          s = `${String(dt.getHours()).padStart(2, '0')}:00`;
+        }
+      }
+      if (s.length === 4 && s.includes(":")) s = "0" + s;
+      let hourNum = parseInt(s.split(":")[0], 10);
+      if (isNaN(hourNum)) return "08:00";
+      if (hourNum < 8) return "08:00";
+      if (hourNum > 16) return "16:00";
+      let formatted = `${String(hourNum).padStart(2, '0')}:00`;
+      return RESTRICTED_TIMESLOTS.includes(formatted) ? formatted : "08:00";
+    }
 
     function initApp() {
       loadLocalStorage();
@@ -463,34 +438,11 @@
       setTimeout(() => {
         el.classList.add('translate-y-2', 'opacity-0');
         setTimeout(() => el.remove(), 300);
-      }, 3500);
+      }, 3000);
     }
 
-    function getAllCombinedJornadas() {
-      let byTitle = new Map();
-      sheetSavedJornadas.forEach(j => {
-        byTitle.set((j.title || '').toLowerCase(), { ...j, source: 'sheet' });
-      });
-      state.savedJornadas.forEach(j => {
-        let key = (j.title || '').toLowerCase();
-        let existing = byTitle.get(key);
-        if (existing) {
-          let mergedMatches = [...existing.matches];
-          j.matches.forEach(m => {
-            let existsMatch = mergedMatches.some(em =>
-              em.category === m.category &&
-              em.rama === m.rama &&
-              em.time === m.time &&
-              [em.homeTeam, em.awayTeam].sort().join('___') === [m.homeTeam, m.awayTeam].sort().join('___')
-            );
-            if (!existsMatch) mergedMatches.push(m);
-          });
-          byTitle.set(key, { ...j, matches: mergedMatches, source: 'both' });
-        } else {
-          byTitle.set(key, { ...j, source: 'local' });
-        }
-      });
-      return Array.from(byTitle.values());
+    function getSheetJornadas() {
+      return sheetSyncedSuccessfully ? sheetSavedJornadas : [];
     }
 
     function renderAll() {
@@ -510,10 +462,10 @@
 
     function updateBadges() {
       let activeCount = Object.values(state.activeTeams).filter(t => t.active).length;
-      let combinedCount = getAllCombinedJornadas().length;
-      document.getElementById('badge-weekend-active').innerText = `${activeCount} eq.`;
+      let jCount = getSheetJornadas().length;
+      document.getElementById('badge-weekend-active').innerText = `${activeCount}`;
       document.getElementById('badge-schedule-count').innerText = state.currentSchedule.length;
-      document.getElementById('badge-saved-jornadas').innerText = `${combinedCount} jorn.`;
+      document.getElementById('badge-saved-jornadas').innerText = `${jCount}`;
       document.getElementById('forced-matches-count').innerText = state.forcedMatches.length;
     }
 
@@ -528,7 +480,7 @@
           baseUrl = `https://docs.google.com/spreadsheets/d/${stdMatch[1]}/gviz/tq?tqx=out:json`;
         }
         if (!baseUrl) {
-          reject(new Error("URL no compatible con JSONP"));
+          reject(new Error("URL"));
           return;
         }
         if (sheetTabName) {
@@ -539,7 +491,7 @@
         let script = document.createElement('script');
         let timer = setTimeout(() => {
           cleanup();
-          reject(new Error("Tiempo agotado al consultar Google Sheets"));
+          reject(new Error("Timeout"));
         }, 8000);
 
         function cleanup() {
@@ -568,7 +520,7 @@
         script.src = `${baseUrl}&tqx=responseHandler:${cbName}`;
         script.onerror = () => {
           cleanup();
-          reject(new Error("Error de red al cargar JSONP"));
+          reject(new Error("Network"));
         };
         document.body.appendChild(script);
       });
@@ -595,7 +547,10 @@
 
         window[cbName] = function(data) {
           cleanup();
-          resolve(Array.isArray(data) ? data : (data?.rows || data?.matches || null));
+          if (Array.isArray(data)) resolve(data);
+          else if (data && Array.isArray(data.rows)) resolve(data.rows);
+          else if (data && Array.isArray(data.matches)) resolve(data.matches);
+          else resolve(null);
         };
 
         let sep = SHEETS_SAVE_WEBHOOK_URL.includes('?') ? '&' : '?';
@@ -667,10 +622,7 @@
         else if (rawRest.includes("LATE") || rawRest.includes("TARDE")) restriction = "LATE";
         else if (rawRest.includes("EXACT") || rawRest.includes("HORA")) restriction = "EXACT";
 
-        let specificTime = (cols[idxHora >= 0 ? idxHora : 6] || "08:00").trim();
-        if (specificTime.length === 4 && specificTime.includes(":")) specificTime = "0" + specificTime;
-        if (!RESTRICTED_TIMESLOTS.includes(specificTime)) specificTime = "08:00";
-
+        let specificTime = normalizeTimeToAllowedWindow(cols[idxHora >= 0 ? idxHora : 6] || "08:00");
         let hint = (cols[idxNota >= 0 ? idxNota : 7] || "").trim();
         let isPrac = hint.toLowerCase().includes("practica") || name.toLowerCase().includes("practica");
 
@@ -693,7 +645,7 @@
 
     function parseSavedRolesCSV(csvText) {
       let lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      if (lines.length < 2) return { counts: {}, jornadas: [], totalMatches: 0 };
+      if (lines.length < 1) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: false };
 
       let headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
       let idxJornada = headers.findIndex(h => h.includes('jornada') || h.includes('fecha') || h.includes('titulo'));
@@ -704,17 +656,20 @@
       let idxLocal = headers.findIndex(h => h.includes('local') || h.includes('home'));
       let idxVisit = headers.findIndex(h => h.includes('visit') || h.includes('away'));
 
+      let hasHeaderRow = (idxLocal >= 0 && idxVisit >= 0) || headers.some(h => h.includes('jornada') || h.includes('cancha'));
+      let startRow = hasHeaderRow ? 1 : 0;
+
       let counts = {};
       let jornadasMap = {};
       let totalMatches = 0;
 
-      for (let i = 1; i < lines.length; i++) {
+      for (let i = startRow; i < lines.length; i++) {
         let cols = parseCSVLine(lines[i]);
-        let jornadaTitle = (cols[idxJornada >= 0 ? idxJornada : 0] || "Jornada Guardada (Sheet)").trim();
+        let jornadaTitle = (cols[idxJornada >= 0 ? idxJornada : 0] || "Jornada").trim();
         let cat = (cols[idxCat >= 0 ? idxCat : 1] || "").trim();
         let rawRama = (cols[idxRama >= 0 ? idxRama : 2] || "VARONIL").toUpperCase();
         let rama = rawRama.includes("FEM") ? "FEMENIL" : "VARONIL";
-        let time = (cols[idxHora >= 0 ? idxHora : 3] || "08:00").trim();
+        let time = normalizeTimeToAllowedWindow(cols[idxHora >= 0 ? idxHora : 3] || "08:00");
         let court = (cols[idxCancha >= 0 ? idxCancha : 4] || "Cancha 1").trim();
         let homeTeam = (cols[idxLocal >= 0 ? idxLocal : 5] || "").trim();
         let awayTeam = (cols[idxVisit >= 0 ? idxVisit : 6] || "").trim();
@@ -722,15 +677,15 @@
         if (!homeTeam || !awayTeam) continue;
         totalMatches++;
 
-        let pairKey = [homeTeam, awayTeam].sort().join('___') + `|${rama}|${cat}`;
+        let pairKey = buildMatchupKey(homeTeam, awayTeam, rama, cat);
         counts[pairKey] = (counts[pairKey] || 0) + 1;
 
-        let jKey = jornadaTitle.toLowerCase();
+        let jKey = normalizeKeyPart(jornadaTitle);
         if (!jornadasMap[jKey]) {
           jornadasMap[jKey] = {
             id: 'sheet_j_' + btoa(unescape(encodeURIComponent(jKey))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) + '_' + i,
             title: jornadaTitle,
-            date: "Google Sheet",
+            date: "Sheet",
             matches: []
           };
         }
@@ -749,11 +704,13 @@
         });
       }
 
-      return { counts, jornadas: Object.values(jornadasMap), totalMatches };
+      return { counts, jornadas: Object.values(jornadasMap), totalMatches, validResponse: true };
     }
 
     function parseSavedRolesRowsArray(rows) {
-      if (!Array.isArray(rows) || rows.length === 0) return { counts: {}, jornadas: [], totalMatches: 0 };
+      if (!Array.isArray(rows)) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: false };
+      if (rows.length === 0) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: true };
+
       let csvLines = [];
       rows.forEach(r => {
         if (Array.isArray(r)) {
@@ -771,7 +728,8 @@
           csvLines.push(vals.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         }
       });
-      if (csvLines.length === 0) return { counts: {}, jornadas: [], totalMatches: 0 };
+
+      if (csvLines.length === 0) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: true };
       let hasHeader = csvLines[0].toLowerCase().includes('jornada') && csvLines[0].toLowerCase().includes('local');
       let finalCsv = hasHeader
         ? csvLines.join("\n")
@@ -781,7 +739,6 @@
 
     async function syncSavedRolesFromSheet(isBackground = true) {
       let statusBadge = document.getElementById('sheet-history-status');
-      let csvText = "";
       let parsed = null;
 
       try {
@@ -791,35 +748,40 @@
           if (res.ok) {
             let txt = await res.text();
             if (!txt.trim().startsWith("<!DOCTYPE") && !txt.trim().startsWith("<html")) {
-              csvText = txt;
+              parsed = parseSavedRolesCSV(txt);
             }
           }
         }
 
-        if (!csvText) {
-          csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL, SHEETS_TARGET_TAB);
-        }
-
-        if (csvText && csvText.trim().length > 0) {
-          parsed = parseSavedRolesCSV(csvText);
+        if (!parsed) {
+          let csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL, SHEETS_TARGET_TAB);
+          if (csvText && csvText.trim().length > 0) {
+            parsed = parseSavedRolesCSV(csvText);
+          }
         }
       } catch (e) {
         parsed = null;
       }
 
-      if (!parsed || parsed.totalMatches === 0) {
+      if (!parsed) {
         let appScriptRows = await fetchSavedRolesViaAppsScript();
-        if (appScriptRows && appScriptRows.length > 0) {
+        if (appScriptRows !== null) {
           parsed = parseSavedRolesRowsArray(appScriptRows);
         }
       }
 
-      if (parsed) {
+      if (parsed && parsed.validResponse) {
         let sig = JSON.stringify({ c: parsed.counts, t: parsed.totalMatches });
-        let changed = sig !== lastSavedRolesSignature && lastSavedRolesSignature !== "";
+        let changed = lastSavedRolesSignature !== "" && sig !== lastSavedRolesSignature;
         lastSavedRolesSignature = sig;
+        sheetSyncedSuccessfully = true;
         sheetPlayedMatchupsCount = parsed.counts || {};
         sheetSavedJornadas = parsed.jornadas || [];
+
+        if (state.activeJornadaId && !getSheetJornadas().some(j => j.id === state.activeJornadaId)) {
+          state.activeJornadaId = getSheetJornadas()[0]?.id || null;
+          saveLocalStorage();
+        }
 
         updateBadges();
         if (!document.getElementById('tab-standings').classList.contains('hidden')) {
@@ -829,13 +791,13 @@
           renderScheduleTab();
         }
         if (changed && isBackground) {
-          showToast(`Historial de ROLES_GUARDADOS sincronizado (${parsed.totalMatches} partidos)`);
+          showToast(`${parsed.totalMatches}`);
         }
         if (statusBadge) {
-          statusBadge.innerText = `ROLES_GUARDADOS: ${parsed.totalMatches} partidos • ${sheetSavedJornadas.length} jorn.`;
+          statusBadge.innerText = `${parsed.totalMatches}`;
         }
       } else if (statusBadge) {
-        statusBadge.innerText = `ROLES_GUARDADOS: ${Object.keys(sheetPlayedMatchupsCount).length} duelos en caché`;
+        statusBadge.innerText = `${Object.keys(sheetPlayedMatchupsCount).length}`;
       }
     }
 
@@ -849,10 +811,10 @@
         let cacheBustUrl = `${LIVE_SHEET_CSV_URL}${LIVE_SHEET_CSV_URL.includes('?') ? '&' : '?'}_t=${Date.now()}`;
         try {
           let res = await fetch(cacheBustUrl, { cache: 'no-store' });
-          if (!res.ok) throw new Error("HTTP " + res.status);
+          if (!res.ok) throw new Error("HTTP");
           csvText = await res.text();
           if (csvText.trim().startsWith("<!DOCTYPE") || csvText.trim().startsWith("<html")) {
-            throw new Error("HTML recibido en lugar de CSV");
+            throw new Error("HTML");
           }
         } catch (fetchErr) {
           csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL);
@@ -871,18 +833,18 @@
           renderWeekendClubs();
           updateBadges();
           if (hadPreviousData && isBackground) {
-            showToast("Equipos y restricciones actualizados desde tu Google Sheet");
+            showToast(`${count}`);
           }
         }
 
         let activeChecked = Object.values(state.activeTeams).filter(t => t.active).length;
         let hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         if (statusEl) {
-          statusEl.innerText = `${Object.keys(state.activeTeams).length} equipos (${activeChecked} activos) • Revisado ${hora}`;
+          statusEl.innerText = `${activeChecked}/${Object.keys(state.activeTeams).length} • ${hora}`;
         }
       } catch (err) {
         if (statusEl) {
-          statusEl.innerText = "Esperando respuesta del Sheet (reintentando automáticamente)...";
+          statusEl.innerText = "...";
         }
       } finally {
         await syncSavedRolesFromSheet(isBackground);
@@ -904,7 +866,7 @@
     }
 
     function updateCourtsCount(val) {
-      let num = parseInt(val) || 1;
+      let num = Math.max(1, Math.min(15, parseInt(val) || 1));
       state.courtsCount = num;
       while (state.courtNames.length < num) state.courtNames.push(`Cancha ${state.courtNames.length + 1}`);
       if (state.courtNames.length > num) state.courtNames = state.courtNames.slice(0, num);
@@ -915,10 +877,9 @@
     function renderDaysConfig() {
       let container = document.getElementById('days-checkboxes');
       container.innerHTML = `
-        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-court-50 border-court-300 text-court-800 font-bold text-xs">
-          <input type="checkbox" checked disabled class="rounded text-court-600" />
-          <span>Sábado (Fijo)</span>
-        </label>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-court-50 border-court-300 text-court-800 font-bold text-xs">
+          <span>Sábado</span>
+        </span>
       `;
       state.days = ["Sábado"];
     }
@@ -935,7 +896,7 @@
 
       let selSCat = document.getElementById('sched-filter-cat');
       let curCat = selSCat.value;
-      selSCat.innerHTML = '<option value="ALL">Todas las Categorías</option>' + catArr.map(c => `<option value="${c}">${c}</option>`).join('');
+      selSCat.innerHTML = '<option value="ALL">Categorías</option>' + catArr.map(c => `<option value="${c}">${c}</option>`).join('');
       selSCat.value = curCat || 'ALL';
     }
 
@@ -952,29 +913,6 @@
         }
       });
       renderWeekendClubs();
-    }
-
-    function getFilteredTeamKeys() {
-      let ramaFilter = state.selectedRamaFilter;
-      let searchTxt = document.getElementById('weekend-search-club').value.toLowerCase();
-      return Object.entries(state.activeTeams)
-        .filter(([, team]) => {
-          if (ramaFilter !== 'ALL' && team.rama !== ramaFilter) return false;
-          if (searchTxt && !team.club.toLowerCase().includes(searchTxt) && !team.name.toLowerCase().includes(searchTxt)) return false;
-          return true;
-        })
-        .map(([key]) => key);
-    }
-
-    function setAllFilteredTeamsActive(isActive) {
-      let keys = getFilteredTeamKeys();
-      keys.forEach(k => {
-        if (state.activeTeams[k]) state.activeTeams[k].active = isActive;
-      });
-      saveLocalStorage();
-      renderWeekendClubs();
-      updateBadges();
-      showToast(isActive ? `Se marcaron ${keys.length} equipos` : `Se desmarcaron ${keys.length} equipos`);
     }
 
     function renderWeekendClubs() {
@@ -999,10 +937,7 @@
       let sortedKeys = Object.keys(clubsMap).sort();
 
       if (sortedKeys.length === 0) {
-        let msg = Object.keys(state.activeTeams).length === 0
-          ? "Esperando equipos desde tu Google Sheet..."
-          : "No se encontraron equipos con los filtros seleccionados.";
-        grid.innerHTML = `<div class="col-span-full py-10 px-4 text-center text-slate-500 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-300">${msg}</div>`;
+        grid.innerHTML = `<div class="col-span-full py-10 px-4 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-300">0</div>`;
         return;
       }
 
@@ -1021,22 +956,22 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase ${isFemenil ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}">
-                ${isFemenil ? '🌸 Femenil' : '🏀 Varonil/Mixto'}
+                ${isFemenil ? 'Femenil' : 'Varonil'}
               </span>
               <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${clubActiveCount}/${group.teams.length}</span>
             </div>
           </div>
           <div class="space-y-2">
             ${group.teams.map(t => `
-              <div class="p-2.5 rounded-xl border transition ${t.active ? (isFemenil ? 'bg-pink-50/40 border-pink-200' : 'bg-court-50/50 border-court-200') : 'bg-white border-slate-100'}">
-                <label class="flex items-center gap-2 cursor-pointer text-xs">
-                  <input type="checkbox" ${t.active ? 'checked' : ''} onchange="toggleTeamActive('${t.key}')" class="rounded ${isFemenil ? 'text-pink-600' : 'text-court-600'}" />
-                  <div>
-                    <span class="font-bold text-slate-800">${t.name}</span>
-                    <span class="text-[10px] text-slate-500 block">${t.category}</span>
-                  </div>
-                </label>
-                ${t.hint ? `<div class="mt-1.5 text-[10px] text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded font-medium">Nota: ${t.hint}</div>` : ''}
+              <div class="p-2.5 rounded-xl border transition flex items-center justify-between gap-2 ${t.active ? (isFemenil ? 'bg-pink-50/50 border-pink-200' : 'bg-court-50/60 border-court-200') : 'bg-white border-slate-100 opacity-70'}">
+                <div>
+                  <span class="font-bold text-slate-800 text-xs block">${t.name}</span>
+                  <span class="text-[10px] text-slate-500 block">${t.category}</span>
+                  ${t.hint ? `<div class="mt-1 text-[10px] text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded font-medium inline-block">${t.hint}</div>` : ''}
+                </div>
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${t.active ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">
+                  ${t.active ? 'SI' : 'NO'}
+                </span>
               </div>
             `).join('')}
           </div>
@@ -1044,39 +979,31 @@
         grid.appendChild(card);
       });
 
-      document.getElementById('badge-weekend-active').innerText = `${Object.values(state.activeTeams).filter(t => t.active).length} eq.`;
-    }
-
-    function toggleTeamActive(key) {
-      if (state.activeTeams[key]) {
-        state.activeTeams[key].active = !state.activeTeams[key].active;
-        saveLocalStorage();
-        renderWeekendClubs();
-        updateBadges();
-      }
+      document.getElementById('badge-weekend-active').innerText = `${Object.values(state.activeTeams).filter(t => t.active).length}`;
     }
 
     function getPlayedMatchupsCount() {
-      let countMap = { ...sheetPlayedMatchupsCount };
-      state.savedJornadas.forEach(j => {
-        j.matches.forEach(m => {
-          let pairKey = [m.homeTeam, m.awayTeam].sort().join('___') + `|${m.rama}|${m.category}`;
-          countMap[pairKey] = (countMap[pairKey] || 0) + 1;
+      let countMap = {};
+      if (sheetSyncedSuccessfully) {
+        Object.entries(sheetPlayedMatchupsCount).forEach(([k, v]) => {
+          countMap[k] = (countMap[k] || 0) + v;
         });
-      });
+      }
       return countMap;
     }
 
     function generateSchedule() {
-      state.weekendLabel = document.getElementById('weekend-label-input').value || "Jornada - Sábado";
+      state.weekendLabel = document.getElementById('weekend-label-input').value || "Jornada 1 - Sábado";
       let activeList = Object.values(state.activeTeams).filter(t => t.active);
 
       if (activeList.length < 2) {
-        showToast('Marca al menos 2 equipos activos para generar un rol.', 'error');
+        showToast('2+', 'error');
         return;
       }
 
       let playedHistory = getPlayedMatchupsCount();
+      let usedInCurrentCategory = new Set();
+
       let byCat = {};
       activeList.forEach(t => {
         let groupKey = `${t.rama}|${t.category}`;
@@ -1095,7 +1022,9 @@
             let t1 = pool.find(x => x.id === fm.team1Id);
             let t2 = pool.find(x => x.id === fm.team2Id);
             if (t1 && t2) {
-              rawPairs.push({ cat, rama, t1, t2 });
+              let pairKey = buildMatchupKey(t1.name, t2.name, rama, cat);
+              rawPairs.push({ cat, rama, t1, t2, pairKey });
+              usedInCurrentCategory.add(pairKey);
               pool = pool.filter(x => x.id !== t1.id && x.id !== t2.id);
             }
           }
@@ -1108,11 +1037,12 @@
 
           for (let i = 0; i < pool.length; i++) {
             let candidate = pool[i];
-            let pairKey = [t1.name, candidate.name].sort().join('___') + `|${rama}|${cat}`;
+            let pairKey = buildMatchupKey(t1.name, candidate.name, rama, cat);
+            let dupInCatPenalty = usedInCurrentCategory.has(pairKey) ? 100000 : 0;
             let timesPlayed = state.rules.avoidRematch ? (playedHistory[pairKey] || 0) : 0;
-            let sameClubPenalty = (state.rules.avoidSameClubMatchup && t1.club === candidate.club) ? 10 : 0;
+            let sameClubPenalty = (state.rules.avoidSameClubMatchup && normalizeKeyPart(t1.club) === normalizeKeyPart(candidate.club)) ? 25 : 0;
 
-            let score = (timesPlayed * 100) + sameClubPenalty;
+            let score = dupInCatPenalty + (timesPlayed * 1000) + sameClubPenalty + Math.random();
             if (score < bestScore) {
               bestScore = score;
               bestIdx = i;
@@ -1120,17 +1050,20 @@
           }
 
           let t2 = pool.splice(bestIdx, 1)[0];
-          rawPairs.push({ cat, rama, t1, t2 });
+          let chosenKey = buildMatchupKey(t1.name, t2.name, rama, cat);
+          usedInCurrentCategory.add(chosenKey);
+          rawPairs.push({ cat, rama, t1, t2, pairKey: chosenKey });
         }
       });
 
       let schedule = [];
       let occupiedSlots = new Set();
-      let courts = state.courtNames;
+      let courts = state.courtNames.length > 0 ? state.courtNames : ["Cancha 1"];
       let timeslots = RESTRICTED_TIMESLOTS;
 
       function findAvailableSlot(preferredTimes) {
         for (let time of preferredTimes) {
+          if (!timeslots.includes(time)) continue;
           for (let court of courts) {
             let key = `${time}|${court}`;
             if (!occupiedSlots.has(key)) {
@@ -1148,7 +1081,7 @@
             }
           }
         }
-        return { time: preferredTimes[0] || "08:00", court: courts[0] || "Cancha 1" };
+        return { time: "16:00", court: courts[0] || "Cancha 1" };
       }
 
       rawPairs.sort((a, b) => {
@@ -1162,13 +1095,15 @@
         let preferredTimes = [...timeslots];
 
         if (t1.restriction === 'EXACT') {
-          preferredTimes = [t1.specificTime, ...timeslots];
+          let exactH = normalizeTimeToAllowedWindow(t1.specificTime);
+          preferredTimes = [exactH, ...timeslots];
         } else if (t2.restriction === 'EXACT') {
-          preferredTimes = [t2.specificTime, ...timeslots];
+          let exactH = normalizeTimeToAllowedWindow(t2.specificTime);
+          preferredTimes = [exactH, ...timeslots];
         } else if (t1.restriction === 'EARLY' || t2.restriction === 'EARLY') {
-          preferredTimes = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+          preferredTimes = [...timeslots];
         } else if (t1.restriction === 'LATE' || t2.restriction === 'LATE') {
-          preferredTimes = ["16:00", "15:00", "14:00", "13:00", "12:00", "11:00", "10:00", "09:00", "08:00"];
+          preferredTimes = [...timeslots].reverse();
         }
 
         let slot = findAvailableSlot(preferredTimes);
@@ -1187,19 +1122,23 @@
         });
       });
 
-      schedule.sort((a, b) => a.time.localeCompare(b.time));
+      schedule.sort((a, b) => {
+        let cmpTime = a.time.localeCompare(b.time);
+        if (cmpTime !== 0) return cmpTime;
+        return a.court.localeCompare(b.court);
+      });
 
       state.currentSchedule = schedule;
       saveLocalStorage();
       switchTab('schedule');
-      showToast(`¡Rol generado! ${schedule.length} partidos sin repetir rivales previos.`);
+      showToast(`${schedule.length}`);
     }
 
     function renderScheduleTab() {
       document.getElementById('print-league-name').innerText = state.leagueTitle;
       document.getElementById('print-jornada-name').innerText = state.weekendLabel;
-      document.getElementById('print-timestamp').innerText = `Generado el ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-      document.getElementById('print-match-counter').innerText = `Total partidos: ${state.currentSchedule.length}`;
+      document.getElementById('print-timestamp').innerText = `${new Date().toLocaleDateString()} • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      document.getElementById('print-match-counter').innerText = `${state.currentSchedule.length}`;
 
       let catsSet = new Set(), clubsSet = new Set();
       state.currentSchedule.forEach(m => {
@@ -1210,12 +1149,12 @@
 
       let catSel = document.getElementById('sched-filter-cat');
       let curCat = catSel.value;
-      catSel.innerHTML = '<option value="ALL">Todas las Categorías</option>' + Array.from(catsSet).map(c => `<option value="${c}">${c}</option>`).join('');
+      catSel.innerHTML = '<option value="ALL">Categorías</option>' + Array.from(catsSet).map(c => `<option value="${c}">${c}</option>`).join('');
       catSel.value = curCat || 'ALL';
 
       let clubSel = document.getElementById('sched-filter-club');
       let curClub = clubSel.value;
-      clubSel.innerHTML = '<option value="ALL">Todos los Clubes</option>' + Array.from(clubsSet).map(cb => `<option value="${cb}">${cb}</option>`).join('');
+      clubSel.innerHTML = '<option value="ALL">Clubes</option>' + Array.from(clubsSet).map(cb => `<option value="${cb}">${cb}</option>`).join('');
       clubSel.value = curClub || 'ALL';
 
       let filtered = state.currentSchedule.filter(m => {
@@ -1232,7 +1171,7 @@
 
       let container = document.getElementById('schedule-tables-container');
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 text-slate-400"><i data-lucide="calendar-off" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>No hay partidos con los filtros seleccionados.</p></div>`;
+        container.innerHTML = `<div class="text-center py-12 text-slate-400"><i data-lucide="calendar-off" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>0</p></div>`;
         lucide.createIcons();
         return;
       }
@@ -1254,10 +1193,10 @@
         groupDiv.innerHTML = `
           <div class="${isFemenil ? 'bg-pink-900 text-white' : 'bg-navy-900 text-white'} px-4 py-2.5 rounded-xl font-extrabold text-sm flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded ${isFemenil ? 'bg-pink-600' : 'bg-court-600'} text-[10px] uppercase">${isFemenil ? 'Femenil' : 'Varonil/Mixto'}</span>
-              <span>🏀 ${groupName}</span>
+              <span class="px-2 py-0.5 rounded ${isFemenil ? 'bg-pink-600' : 'bg-court-600'} text-[10px] uppercase">${isFemenil ? 'Femenil' : 'Varonil'}</span>
+              <span>${groupName}</span>
             </div>
-            <span class="text-xs text-slate-200">${matches.length} partidos</span>
+            <span class="text-xs text-slate-200">${matches.length}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
@@ -1268,13 +1207,13 @@
                   <th class="p-2.5 text-right">Local</th>
                   <th class="p-2.5 text-center">VS</th>
                   <th class="p-2.5">Visitante</th>
-                  <th class="p-2.5 text-center no-print">Historial</th>
-                  <th class="p-2.5 text-center no-print">Acciones</th>
+                  <th class="p-2.5 text-center no-print">Sheet</th>
+                  <th class="p-2.5 text-center no-print"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 font-medium">
                 ${matches.map(m => {
-                  let pairKey = [m.homeTeam, m.awayTeam].sort().join('___') + `|${m.rama}|${m.category}`;
+                  let pairKey = buildMatchupKey(m.homeTeam, m.awayTeam, m.rama, m.category);
                   let prevCount = playedHistory[pairKey] || 0;
                   return `
                   <tr class="hover:bg-slate-50 transition">
@@ -1285,13 +1224,13 @@
                     <td class="p-2.5 font-extrabold text-slate-900">${m.awayTeam}</td>
                     <td class="p-2.5 text-center no-print">
                       ${prevCount === 0
-                        ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">Nuevo duelo</span>'
-                        : `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Jugado ${prevCount}x</span>`}
+                        ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">0</span>'
+                        : `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">${prevCount}x</span>`}
                     </td>
                     <td class="p-2.5 text-center no-print">
                       <div class="flex items-center justify-center gap-1">
-                        <button onclick="openEditMatchModal('${m.id}')" class="p-1 rounded hover:bg-slate-200 text-slate-600" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="deleteMatch('${m.id}')" class="p-1 rounded hover:bg-rose-100 text-rose-600" title="Eliminar"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="openEditMatchModal('${m.id}')" class="p-1 rounded hover:bg-slate-200 text-slate-600"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteMatch('${m.id}')" class="p-1 rounded hover:bg-rose-100 text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                       </div>
                     </td>
                   </tr>
@@ -1309,24 +1248,28 @@
       let alertsBox = document.getElementById('schedule-alerts-box');
       let conflicts = [];
       let slotCourtMap = {};
+      let seenInRole = new Set();
+
       matches.forEach(m => {
         let key = `${m.time}-${m.court}`;
-        if (slotCourtMap[key]) {
-          conflicts.push(`Cancha ocupada duplicada: ${m.court} a las ${m.time}`);
-        }
+        if (slotCourtMap[key]) conflicts.push(`${m.court} • ${m.time}`);
         slotCourtMap[key] = true;
+
+        let pairKey = buildMatchupKey(m.homeTeam, m.awayTeam, m.rama, m.category);
+        if (seenInRole.has(pairKey)) conflicts.push(`${m.homeTeam} vs ${m.awayTeam}`);
+        seenInRole.add(pairKey);
+
+        let h = parseInt((m.time || "08:00").split(":")[0], 10);
+        if (h < 8 || h > 16) conflicts.push(`${m.time}`);
       });
 
       if (conflicts.length > 0) {
         alertsBox.innerHTML = `
           <div class="bg-amber-50 border border-amber-300 rounded-2xl p-4 text-amber-900 text-xs flex items-start gap-3">
             <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold block">Se detectaron posibles cruces de cancha:</span>
-              <ul class="list-disc list-inside mt-1 space-y-0.5">
-                ${conflicts.map(c => `<li>${c}</li>`).join('')}
-              </ul>
-            </div>
+            <ul class="list-disc list-inside space-y-0.5">
+              ${conflicts.map(c => `<li>${c}</li>`).join('')}
+            </ul>
           </div>
         `;
       } else {
@@ -1360,11 +1303,11 @@
       let cat = document.getElementById('forced-cat-select').value;
       let t1 = document.getElementById('forced-team1-select').value;
       let t2 = document.getElementById('forced-team2-select').value;
-      if (t1 === t2) { showToast('Selecciona equipos distintos', 'error'); return; }
+      if (t1 === t2) { showToast('!', 'error'); return; }
       state.forcedMatches.push({ category: cat, team1Id: t1, team2Id: t2 });
       saveLocalStorage();
       renderForcedMatchesList();
-      showToast('Emparejamiento forzado agregado');
+      showToast('OK');
     }
     function renderForcedMatchesList() {
       let list = document.getElementById('forced-matches-list');
@@ -1374,7 +1317,7 @@
         return `
           <div class="flex items-center justify-between p-2 bg-slate-50 rounded-xl text-xs">
             <span><strong>${fm.category}:</strong> ${t1} vs ${t2}</span>
-            <button onclick="state.forcedMatches.splice(${idx},1);saveLocalStorage();renderForcedMatchesList();" class="text-rose-600 hover:underline">Eliminar</button>
+            <button onclick="state.forcedMatches.splice(${idx},1);saveLocalStorage();renderForcedMatchesList();" class="text-rose-600 hover:underline">X</button>
           </div>
         `;
       }).join('');
@@ -1406,7 +1349,7 @@
       let cat = document.getElementById('manual-match-cat').value;
       let hKey = document.getElementById('manual-match-home').value;
       let aKey = document.getElementById('manual-match-away').value;
-      if (hKey === aKey) { showToast('El equipo local y visitante no pueden ser el mismo.', 'error'); return; }
+      if (hKey === aKey) { showToast('!', 'error'); return; }
       let t1 = state.activeTeams[hKey];
       let t2 = state.activeTeams[aKey];
       let newM = {
@@ -1414,7 +1357,7 @@
         rama: t1.rama,
         category: cat,
         day: "Sábado",
-        time: document.getElementById('manual-match-time').value,
+        time: normalizeTimeToAllowedWindow(document.getElementById('manual-match-time').value),
         court: document.getElementById('manual-match-court').value,
         homeTeam: t1.name,
         homeClub: t1.club,
@@ -1425,7 +1368,7 @@
       saveLocalStorage();
       closeAddManualMatchModal();
       renderScheduleTab();
-      showToast('Partido manual añadido');
+      showToast('OK');
     }
     function deleteMatch(id) {
       state.currentSchedule = state.currentSchedule.filter(m => m.id !== id);
@@ -1435,11 +1378,11 @@
     function openEditMatchModal(id) {
       let m = state.currentSchedule.find(x => x.id === id);
       if (!m) return;
-      let newTime = prompt("Editar hora (HH:MM):", m.time);
+      let newTime = prompt("HH:MM", m.time);
       if (newTime !== null && newTime.trim() !== "") {
-        m.time = newTime.trim();
+        m.time = normalizeTimeToAllowedWindow(newTime.trim());
       }
-      let newCourt = prompt(`Editar cancha (${state.courtNames.join(', ')}):`, m.court);
+      let newCourt = prompt(state.courtNames.join(', '), m.court);
       if (newCourt !== null && newCourt.trim() !== "") {
         m.court = newCourt.trim();
       }
@@ -1457,27 +1400,27 @@
 
     function copyScheduleForGoogleSheets() {
       if (state.currentSchedule.length === 0) {
-        showToast("No hay rol generado para copiar.", "error");
+        showToast("0", "error");
         return;
       }
       navigator.clipboard.writeText(buildSheetTextFromMatches(state.currentSchedule));
-      showToast('¡Copiado para Google Sheets! Presiona Ctrl+V en tu hoja.');
+      showToast('OK');
     }
 
     function copySelectedJornadaForSheets() {
-      let j = getAllCombinedJornadas().find(x => x.id === state.activeJornadaId);
+      let j = getSheetJornadas().find(x => x.id === state.activeJornadaId);
       if (!j) return;
       let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\n";
       j.matches.forEach(m => {
         text += `${j.title}\t${m.category}\t${m.rama}\t${m.time}\t${m.court}\t${m.homeTeam}\t${m.awayTeam}\n`;
       });
       navigator.clipboard.writeText(text);
-      showToast(`¡Jornada "${j.title}" copiada para Google Sheets!`);
+      showToast('OK');
     }
 
     async function sendScheduleToGoogleSheets(jornadaTitle, matches) {
       if (!SHEETS_SAVE_WEBHOOK_URL || SHEETS_SAVE_WEBHOOK_URL.includes("PEGA_AQUI")) {
-        return { sent: false, reason: "missing_url" };
+        return { sent: false };
       }
       try {
         await fetch(SHEETS_SAVE_WEBHOOK_URL, {
@@ -1492,79 +1435,37 @@
         });
         return { sent: true };
       } catch (err) {
-        console.error("Error enviando a Google Sheets:", err);
-        return { sent: false, reason: "network" };
+        return { sent: false };
       }
     }
 
     async function saveCurrentScheduleToHistory() {
-      if (state.currentSchedule.length === 0) { showToast('No hay rol generado para guardar.', 'error'); return; }
+      if (state.currentSchedule.length === 0) { showToast('0', 'error'); return; }
       let titleToSave = document.getElementById('weekend-label-input').value || state.weekendLabel;
       let btn = document.getElementById('btn-save-jornada');
       if (btn) btn.disabled = true;
 
-      let existingIndex = state.savedJornadas.findIndex(j => j.title.toLowerCase() === titleToSave.toLowerCase());
-      let jornadaId = existingIndex >= 0 ? state.savedJornadas[existingIndex].id : 'j_' + Date.now();
-
-      let newJornada = {
-        id: jornadaId,
-        title: titleToSave,
-        date: new Date().toLocaleDateString(),
-        matches: JSON.parse(JSON.stringify(state.currentSchedule))
-      };
-
-      if (existingIndex >= 0) {
-        state.savedJornadas[existingIndex] = newJornada;
-      } else {
-        state.savedJornadas.push(newJornada);
-      }
-
-      state.activeJornadaId = jornadaId;
-      saveLocalStorage();
-      updateBadges();
-      renderHistoryTab();
-
-      let sheetResult = await sendScheduleToGoogleSheets(titleToSave, newJornada.matches);
+      let sheetResult = await sendScheduleToGoogleSheets(titleToSave, state.currentSchedule);
       if (btn) btn.disabled = false;
 
       if (sheetResult.sent) {
-        showToast(`¡"${titleToSave}" guardada y enviada a ${SHEETS_TARGET_TAB} en Google Sheets!`);
+        showToast('OK');
         setTimeout(() => syncSavedRolesFromSheet(false), 1500);
-      } else if (sheetResult.reason === "missing_url") {
-        showToast(`"${titleToSave}" guardada localmente. Falta configurar la URL de Apps Script.`, 'error');
       } else {
-        showToast(`Guardada localmente, pero falló el envío a Google Sheets.`, 'error');
+        showToast('!', 'error');
       }
     }
 
     function loadJornadaIntoCurrentView(id, e) {
       e.stopPropagation();
-      let j = getAllCombinedJornadas().find(x => x.id === id);
+      let j = getSheetJornadas().find(x => x.id === id);
       if (!j) return;
       state.weekendLabel = j.title;
       state.currentSchedule = JSON.parse(JSON.stringify(j.matches));
       saveLocalStorage();
       updateBadges();
       switchTab('schedule');
-      showToast(`Jornada "${j.title}" cargada en el visor.`);
-    }
-
-    function deleteSavedJornada(id, e) {
-      e.stopPropagation();
-      let isLocal = state.savedJornadas.some(j => j.id === id);
-      if (!isLocal) {
-        showToast('Esta jornada proviene de Google Sheets; edítala directamente en ROLES_GUARDADOS.', 'error');
-        return;
-      }
-      if (!confirm("¿Eliminar esta jornada del historial local? Sus partidos volverán a estar disponibles como duelos nuevos.")) return;
-      state.savedJornadas = state.savedJornadas.filter(j => j.id !== id);
-      if (state.activeJornadaId === id) {
-        state.activeJornadaId = getAllCombinedJornadas()[0]?.id || null;
-      }
-      saveLocalStorage();
-      updateBadges();
-      renderHistoryTab();
-      showToast('Jornada eliminada del historial local');
+      showToast('OK');
     }
 
     function renderHistoryTab() {
@@ -1574,35 +1475,21 @@
 
     function renderSavedJornadasList() {
       let list = document.getElementById('saved-jornadas-list');
-      let allJornadas = getAllCombinedJornadas();
-      document.getElementById('total-saved-jornadas-text').innerText = allJornadas.length;
-      if (allJornadas.length === 0) {
-        list.innerHTML = `<p class="col-span-full text-xs text-slate-400 italic">No hay jornadas guardadas todavía en ROLES_GUARDADOS ni en tu historial local.</p>`;
+      let jornadas = getSheetJornadas();
+      document.getElementById('total-saved-jornadas-text').innerText = jornadas.length;
+      if (jornadas.length === 0) {
+        list.innerHTML = `<p class="col-span-full text-xs text-slate-400">0</p>`;
         return;
       }
-      list.innerHTML = allJornadas.map(j => {
-        let isLocal = state.savedJornadas.some(lj => lj.id === j.id);
-        let badgeSource = j.source === 'sheet'
-          ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-bold">Sheet</span>'
-          : j.source === 'both'
-          ? '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold">Sheet + Local</span>'
-          : '<span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[9px] font-bold">Local</span>';
-        return `
+      list.innerHTML = jornadas.map(j => `
         <div onclick="selectJornadaDetail('${j.id}')" class="p-3.5 rounded-xl border cursor-pointer transition flex items-center justify-between gap-2 ${state.activeJornadaId === j.id ? 'bg-court-50 border-court-300 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}">
           <div>
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-slate-900 text-xs block">${j.title}</span>
-              ${badgeSource}
-            </div>
-            <span class="text-[10px] text-court-600 font-semibold">${j.matches.length} partidos • ${j.date}</span>
+            <span class="font-bold text-slate-900 text-xs block">${j.title}</span>
+            <span class="text-[10px] text-court-600 font-semibold">${j.matches.length}</span>
           </div>
-          <div class="flex items-center gap-1">
-            <button onclick="loadJornadaIntoCurrentView('${j.id}', event)" class="px-2 py-1 rounded-lg bg-white border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-200" title="Ver en Pestaña 2">Ver Rol</button>
-            ${isLocal ? `<button onclick="deleteSavedJornada('${j.id}', event)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Eliminar jornada local"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
-          </div>
+          <button onclick="loadJornadaIntoCurrentView('${j.id}', event)" class="px-2 py-1 rounded-lg bg-white border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-200">Rol</button>
         </div>
-      `}).join('');
-      lucide.createIcons();
+      `).join('');
     }
 
     function selectJornadaDetail(id) {
@@ -1612,25 +1499,25 @@
     }
 
     function renderJornadaDetail() {
-      let j = getAllCombinedJornadas().find(x => x.id === state.activeJornadaId);
+      let j = getSheetJornadas().find(x => x.id === state.activeJornadaId);
       let container = document.getElementById('jornada-detail-container');
       let btnCopy = document.getElementById('btn-copy-selected-jornada');
 
       if (!j) {
         btnCopy.classList.add('hidden');
-        document.getElementById('active-jornada-title-label').innerText = "Detalle de Jornada Seleccionada";
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">Selecciona una jornada guardada arriba para ver sus partidos.</p>`;
+        document.getElementById('active-jornada-title-label').innerText = "";
+        container.innerHTML = "";
         return;
       }
 
       btnCopy.classList.remove('hidden');
-      document.getElementById('active-jornada-title-label').innerText = `${j.title} (${j.matches.length} partidos)`;
+      document.getElementById('active-jornada-title-label').innerText = `${j.title} (${j.matches.length})`;
 
       container.innerHTML = j.matches.map(m => `
         <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div>
             <span class="font-bold text-slate-900">${m.rama} - ${m.category}</span>
-            <span class="text-slate-500 ml-2">• ${m.time} (${m.court})</span>
+            <span class="text-slate-500 ml-2">${m.time} • ${m.court}</span>
           </div>
           <div class="font-extrabold text-slate-800">
             ${m.homeTeam} <span class="text-court-600 mx-1">VS</span> ${m.awayTeam}
@@ -1640,15 +1527,23 @@
     }
 
     function saveLocalStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        leagueTitle: state.leagueTitle,
+        courtsCount: state.courtsCount,
+        courtNames: state.courtNames,
+        rules: state.rules,
+        weekendLabel: state.weekendLabel,
+        forcedMatches: state.forcedMatches,
+        currentSchedule: state.currentSchedule,
+        activeJornadaId: state.activeJornadaId
+      }));
     }
 
     function loadLocalStorage() {
-      let saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('lideba_app_state_v4');
+      let saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
           let parsed = JSON.parse(saved);
-          state.activeTeams = parsed.activeTeams || {};
           state.leagueTitle = parsed.leagueTitle || state.leagueTitle;
           state.courtsCount = parsed.courtsCount || state.courtsCount;
           state.courtNames = parsed.courtNames || state.courtNames;
@@ -1656,20 +1551,27 @@
           state.weekendLabel = parsed.weekendLabel || state.weekendLabel;
           state.forcedMatches = parsed.forcedMatches || [];
           state.currentSchedule = parsed.currentSchedule || [];
-          state.savedJornadas = parsed.savedJornadas || [];
           state.activeJornadaId = parsed.activeJornadaId || null;
           state.days = ["Sábado"];
-        } catch (e) { console.error(e); }
+        } catch (e) {}
       }
     }
 
     function exportSeasonBackup() {
-      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+        leagueTitle: state.leagueTitle,
+        courtsCount: state.courtsCount,
+        courtNames: state.courtNames,
+        rules: state.rules,
+        weekendLabel: state.weekendLabel,
+        forcedMatches: state.forcedMatches,
+        currentSchedule: state.currentSchedule
+      }, null, 2));
       let a = document.createElement('a');
       a.href = dataStr;
-      a.download = `LIDEBA_Respaldo_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `LIDEBA_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
-      showToast('Respaldo de temporada exportado');
+      showToast('OK');
     }
 
     function importSeasonBackup(e) {
@@ -1679,13 +1581,13 @@
       reader.onload = function(evt) {
         try {
           let parsed = JSON.parse(evt.target.result);
-          state = { ...state, ...parsed };
+          state = { ...state, ...parsed, activeTeams: state.activeTeams };
           state.days = ["Sábado"];
           saveLocalStorage();
           renderAll();
-          showToast('Respaldo cargado correctamente');
+          showToast('OK');
         } catch (err) {
-          showToast('Archivo JSON inválido', 'error');
+          showToast('!', 'error');
         }
       };
       reader.readAsText(file);
