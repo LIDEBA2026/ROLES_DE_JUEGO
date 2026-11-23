@@ -1257,21 +1257,27 @@
 
         while (pool.length >= 2) {
           let t1 = pool.shift();
-          let bestIdx = 0;
+          let bestIdx = -1;
           let bestScore = Infinity;
 
           for (let i = 0; i < pool.length; i++) {
             let candidate = pool[i];
             let pairKey = buildMatchupKey(t1.name, candidate.name, rama, cat);
-            let dupInCatPenalty = usedInCurrentCategory.has(pairKey) ? 100000 : 0;
-            let timesPlayed = state.rules.avoidRematch ? (playedHistory[pairKey] || 0) : 0;
-            let sameClubPenalty = (state.rules.avoidSameClubMatchup && normalizeKeyPart(t1.club) === normalizeKeyPart(candidate.club)) ? 25 : 0;
+            if (usedInCurrentCategory.has(pairKey)) continue;
 
-            let score = dupInCatPenalty + (timesPlayed * 1000) + sameClubPenalty + Math.random();
+            let timesPlayed = playedHistory[pairKey] || 0;
+            if (state.rules.avoidRematch && timesPlayed > 0) continue;
+
+            let sameClubPenalty = (state.rules.avoidSameClubMatchup && normalizeKeyPart(t1.club) === normalizeKeyPart(candidate.club)) ? 25 : 0;
+            let score = (timesPlayed * 1000) + sameClubPenalty + Math.random();
             if (score < bestScore) {
               bestScore = score;
               bestIdx = i;
             }
+          }
+
+          if (bestIdx === -1) {
+            continue;
           }
 
           let t2 = pool.splice(bestIdx, 1)[0];
