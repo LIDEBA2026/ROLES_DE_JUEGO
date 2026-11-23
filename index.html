@@ -170,6 +170,12 @@
           <span>3. Historial</span>
           <span id="badge-saved-jornadas" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">0 jorn.</span>
         </button>
+
+        <button onclick="switchTab('positions')" id="tab-btn-positions" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap text-slate-300 hover:bg-white/10">
+          <i data-lucide="medal" class="w-4 h-4"></i>
+          <span>4. Posiciones</span>
+          <span id="badge-positions-count" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/10">0</span>
+        </button>
       </nav>
     </div>
   </header>
@@ -343,6 +349,56 @@
         <div id="jornada-detail-container" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </section>
+
+    <section id="tab-positions" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 no-print">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="pos-filter-rama" onchange="renderPositionsTab()" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold bg-white">
+              <option value="ALL">Ramas</option>
+              <option value="VARONIL">Varonil</option>
+              <option value="FEMENIL">Femenil</option>
+            </select>
+            <select id="pos-filter-cat" onchange="renderPositionsTab()" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold bg-white">
+              <option value="ALL">Categorías</option>
+            </select>
+            <input type="text" id="pos-search-team" oninput="renderPositionsTab()" placeholder="Equipo..." class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-medium bg-white w-44" />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="copyStandingsForGoogleSheets()" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 transition">
+              <i data-lucide="table" class="w-4 h-4 text-emerald-600"></i>
+              <span>Copiar Sheets</span>
+            </button>
+            <button onclick="clearMatchResults()" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Limpiar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <i data-lucide="medal" class="w-5 h-5 text-court-600"></i>
+            <span>Tabla de Posiciones</span>
+          </h3>
+          <span id="pos-results-summary" class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-xl">0</span>
+        </div>
+        <div id="positions-tables-container" class="space-y-8"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <i data-lucide="scoreboard" class="w-5 h-5 text-court-600"></i>
+            <span>Marcadores</span>
+          </h3>
+        </div>
+        <div id="positions-matches-container" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -371,6 +427,7 @@
       activeTeams: {},
       forcedMatches: [],
       currentSchedule: [],
+      matchResults: {},
       activeJornadaId: null,
       selectedRamaFilter: 'ALL'
     };
@@ -387,12 +444,44 @@
       return [a, b].sort().join('___') + `|${r}|${c}`;
     }
 
+    function buildStandingTeamKey(teamName, rama, category) {
+      let t = normalizeKeyPart(teamName);
+      let r = normalizeKeyPart(rama || "VARONIL").includes("fem") ? "femenil" : "varonil";
+      let c = normalizeKeyPart(category);
+      return `${r}|${c}|${t}`;
+    }
+
+    function buildResultEntryKey(match) {
+      let j = normalizeKeyPart(match.jornada || state.weekendLabel || "");
+      let r = normalizeKeyPart(match.rama || "VARONIL").includes("fem") ? "femenil" : "varonil";
+      let c = normalizeKeyPart(match.category || "");
+      let pair = [normalizeKeyPart(match.homeTeam), normalizeKeyPart(match.awayTeam)].sort().join('___');
+      let tm = normalizeKeyPart(match.time || "");
+      let ct = normalizeKeyPart(match.court || "");
+      return `${j}|${r}|${c}|${pair}|${tm}|${ct}`;
+    }
+
+    function parseScoreNumber(rawVal) {
+      if (rawVal === null || rawVal === undefined) return null;
+      let str = String(rawVal).trim();
+      if (str === "") return null;
+      let num = parseInt(str, 10);
+      return (!isNaN(num) && num >= 0) ? num : null;
+    }
+
     function normalizeTimeToAllowedWindow(rawTime) {
       let s = (rawTime || "08:00").toString().trim();
       if (s.includes("T")) {
         let dt = new Date(s);
         if (!isNaN(dt.getTime())) {
-          s = `${String(dt.getHours()).padStart(2, '0')}:00`;
+          let utcHour = dt.getUTCHours();
+          let utcMin = dt.getUTCMinutes();
+          if (s.startsWith("1899-12-30") && utcMin === 36) {
+            let localHour = (utcHour - 6 + 24) % 24;
+            s = `${String(localHour).padStart(2, '0')}:00`;
+          } else {
+            s = `${String(dt.getHours()).padStart(2, '0')}:00`;
+          }
         }
       }
       if (s.length === 4 && s.includes(":")) s = "0" + s;
@@ -416,7 +505,7 @@
     }
 
     function switchTab(tabId) {
-      ['weekend', 'schedule', 'standings'].forEach(t => {
+      ['weekend', 'schedule', 'standings', 'positions'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
         document.getElementById(`tab-btn-${t}`).className = "tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap text-slate-300 hover:bg-white/10";
       });
@@ -427,6 +516,7 @@
         syncSavedRolesFromSheet(false);
         renderHistoryTab();
       }
+      if (tabId === 'positions') renderPositionsTab();
       lucide.createIcons();
     }
 
@@ -448,6 +538,30 @@
       return sheetSyncedSuccessfully ? sheetSavedJornadas : [];
     }
 
+    function getAllRecordedMatches() {
+      let list = [];
+      getSheetJornadas().forEach(j => {
+        (j.matches || []).forEach(m => {
+          list.push({ ...m, jornada: m.jornada || j.title });
+        });
+      });
+      (state.currentSchedule || []).forEach(m => {
+        list.push({ ...m, jornada: m.jornada || state.weekendLabel });
+      });
+      return list;
+    }
+
+    function countScoredMatches() {
+      let total = 0;
+      Object.values(state.matchResults || {}).forEach(res => {
+        if (!res) return;
+        let h = parseScoreNumber(res.homeScore);
+        let a = parseScoreNumber(res.awayScore);
+        if (h !== null && a !== null) total++;
+      });
+      return total;
+    }
+
     function renderAll() {
       document.getElementById('league-title-input').value = state.leagueTitle;
       document.getElementById('weekend-label-input').value = state.weekendLabel;
@@ -466,9 +580,11 @@
     function updateBadges() {
       let activeCount = Object.values(state.activeTeams).filter(t => t.active).length;
       let jCount = getSheetJornadas().length;
+      let scoredCount = countScoredMatches();
       document.getElementById('badge-weekend-active').innerText = `${activeCount}`;
       document.getElementById('badge-schedule-count').innerText = state.currentSchedule.length;
       document.getElementById('badge-saved-jornadas').innerText = `${jCount}`;
+      document.getElementById('badge-positions-count').innerText = `${scoredCount}`;
       document.getElementById('forced-matches-count').innerText = state.forcedMatches.length;
     }
 
@@ -673,7 +789,7 @@
 
     function parseSavedRolesCSV(csvText) {
       let lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      if (lines.length < 1) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: false };
+      if (lines.length < 1) return { counts: {}, jornadas: [], resultsFromSheet: {}, totalMatches: 0, validResponse: false };
 
       let headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
       let idxJornada = headers.findIndex(h => h.includes('jornada') || h.includes('fecha') || h.includes('titulo'));
@@ -683,12 +799,21 @@
       let idxCancha = headers.findIndex(h => h.includes('cancha') || h.includes('court'));
       let idxLocal = headers.findIndex(h => h.includes('local') || h.includes('home'));
       let idxVisit = headers.findIndex(h => h.includes('visit') || h.includes('away'));
+      let idxPtsLocal = headers.findIndex(h =>
+        (h.includes('pts') || h.includes('puntos') || h.includes('marcador') || h.includes('score') || h.includes('goles')) &&
+        (h.includes('local') || h.includes('home') || h.includes('1') || h.includes('eq1'))
+      );
+      let idxPtsVisit = headers.findIndex(h =>
+        (h.includes('pts') || h.includes('puntos') || h.includes('marcador') || h.includes('score') || h.includes('goles')) &&
+        (h.includes('visit') || h.includes('away') || h.includes('2') || h.includes('eq2'))
+      );
 
       let hasHeaderRow = (idxLocal >= 0 && idxVisit >= 0) || headers.some(h => h.includes('jornada') || h.includes('cancha'));
       let startRow = hasHeaderRow ? 1 : 0;
 
       let counts = {};
       let jornadasMap = {};
+      let resultsFromSheet = {};
       let totalMatches = 0;
 
       for (let i = startRow; i < lines.length; i++) {
@@ -705,6 +830,26 @@
         if (!homeTeam || !awayTeam) continue;
         totalMatches++;
 
+        let matchObj = {
+          id: 'sm_' + i,
+          jornada: jornadaTitle,
+          rama,
+          category: cat,
+          day: "Sábado",
+          time,
+          court,
+          homeTeam,
+          homeClub: homeTeam,
+          awayTeam,
+          awayClub: awayTeam
+        };
+
+        let hs = idxPtsLocal >= 0 ? parseScoreNumber(cols[idxPtsLocal]) : null;
+        let as = idxPtsVisit >= 0 ? parseScoreNumber(cols[idxPtsVisit]) : null;
+        if (hs !== null && as !== null) {
+          resultsFromSheet[buildResultEntryKey(matchObj)] = { homeScore: hs, awayScore: as };
+        }
+
         let pairKey = buildMatchupKey(homeTeam, awayTeam, rama, cat);
         counts[pairKey] = (counts[pairKey] || 0) + 1;
 
@@ -719,26 +864,15 @@
           };
         }
 
-        jornadasMap[jKey].matches.push({
-          id: 'sm_' + i,
-          rama,
-          category: cat,
-          day: "Sábado",
-          time,
-          court,
-          homeTeam,
-          homeClub: homeTeam,
-          awayTeam,
-          awayClub: awayTeam
-        });
+        jornadasMap[jKey].matches.push(matchObj);
       }
 
-      return { counts, jornadas: Object.values(jornadasMap), totalMatches, validResponse: true };
+      return { counts, jornadas: Object.values(jornadasMap), resultsFromSheet, totalMatches, validResponse: true };
     }
 
     function parseSavedRolesRowsArray(rows) {
-      if (!Array.isArray(rows)) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: false };
-      if (rows.length === 0) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: true };
+      if (!Array.isArray(rows)) return { counts: {}, jornadas: [], resultsFromSheet: {}, totalMatches: 0, validResponse: false };
+      if (rows.length === 0) return { counts: {}, jornadas: [], resultsFromSheet: {}, totalMatches: 0, validResponse: true };
 
       let csvLines = [];
       rows.forEach(r => {
@@ -752,17 +886,19 @@
             r.hora ?? r.Hora ?? '',
             r.cancha ?? r.Cancha ?? '',
             r.local ?? r.Local ?? '',
-            r.visitante ?? r.Visitante ?? ''
+            r.visitante ?? r.Visitante ?? '',
+            r.ptsLocal ?? r['Pts Local'] ?? r.pts_local ?? r.puntosLocal ?? r['Puntos Local'] ?? r.marcadorLocal ?? r['Marcador Local'] ?? '',
+            r.ptsVisitante ?? r['Pts Visitante'] ?? r.pts_visitante ?? r.puntosVisitante ?? r['Puntos Visitante'] ?? r.marcadorVisitante ?? r['Marcador Visitante'] ?? ''
           ];
           csvLines.push(vals.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         }
       });
 
-      if (csvLines.length === 0) return { counts: {}, jornadas: [], totalMatches: 0, validResponse: true };
+      if (csvLines.length === 0) return { counts: {}, jornadas: [], resultsFromSheet: {}, totalMatches: 0, validResponse: true };
       let hasHeader = csvLines[0].toLowerCase().includes('jornada') && csvLines[0].toLowerCase().includes('local');
       let finalCsv = hasHeader
         ? csvLines.join("\n")
-        : `"Jornada","Categoría","Rama","Hora","Cancha","Local","Visitante"\n` + csvLines.join("\n");
+        : `"Jornada","Categoría","Rama","Hora","Cancha","Local","Visitante","Pts Local","Pts Visitante"\n` + csvLines.join("\n");
       return parseSavedRolesCSV(finalCsv);
     }
 
@@ -813,12 +949,17 @@
       }
 
       if (parsed && parsed.validResponse) {
-        let sig = JSON.stringify({ c: parsed.counts, t: parsed.totalMatches });
+        let sig = JSON.stringify({ c: parsed.counts, t: parsed.totalMatches, r: parsed.resultsFromSheet });
         let changed = lastSavedRolesSignature !== "" && sig !== lastSavedRolesSignature;
         lastSavedRolesSignature = sig;
         sheetSyncedSuccessfully = true;
         sheetPlayedMatchupsCount = parsed.counts || {};
         sheetSavedJornadas = parsed.jornadas || [];
+
+        if (parsed.resultsFromSheet && Object.keys(parsed.resultsFromSheet).length > 0) {
+          state.matchResults = { ...state.matchResults, ...parsed.resultsFromSheet };
+          saveLocalStorage();
+        }
 
         if (!state.activeJornadaId && sheetSavedJornadas.length > 0) {
           state.activeJornadaId = sheetSavedJornadas[0].id;
@@ -834,6 +975,9 @@
         }
         if (!document.getElementById('tab-schedule').classList.contains('hidden')) {
           renderScheduleTab();
+        }
+        if (!document.getElementById('tab-positions').classList.contains('hidden')) {
+          renderPositionsTab();
         }
         if (changed && isBackground) {
           showToast(`${parsed.totalMatches}`);
@@ -876,6 +1020,9 @@
           populateCategoryDropdowns();
           renderWeekendClubs();
           updateBadges();
+          if (!document.getElementById('tab-positions').classList.contains('hidden')) {
+            renderPositionsTab();
+          }
           if (hadPreviousData && isBackground) {
             showToast(`${count}`);
           }
@@ -936,12 +1083,18 @@
     function populateCategoryDropdowns() {
       let cats = new Set();
       Object.values(state.activeTeams).forEach(t => cats.add(t.category));
+      getAllRecordedMatches().forEach(m => { if (m.category) cats.add(m.category); });
       let catArr = Array.from(cats);
 
       let selSCat = document.getElementById('sched-filter-cat');
       let curCat = selSCat.value;
       selSCat.innerHTML = '<option value="ALL">Categorías</option>' + catArr.map(c => `<option value="${c}">${c}</option>`).join('');
       selSCat.value = curCat || 'ALL';
+
+      let selPCat = document.getElementById('pos-filter-cat');
+      let curPCat = selPCat.value;
+      selPCat.innerHTML = '<option value="ALL">Categorías</option>' + catArr.map(c => `<option value="${c}">${c}</option>`).join('');
+      selPCat.value = curPCat || 'ALL';
     }
 
     function setRamaFilter(rama) {
@@ -1154,6 +1307,7 @@
 
         schedule.push({
           id: 'm_' + Math.random().toString(36).substr(2, 9),
+          jornada: state.weekendLabel,
           rama: rama,
           category: cat,
           day: "Sábado",
@@ -1398,6 +1552,7 @@
       let t2 = state.activeTeams[aKey];
       let newM = {
         id: 'm_' + Math.random().toString(36).substr(2, 9),
+        jornada: state.weekendLabel,
         rama: t1.rama,
         category: cat,
         day: "Sábado",
@@ -1435,9 +1590,12 @@
     }
 
     function buildSheetTextFromMatches(matches) {
-      let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\n";
+      let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\tPts Local\tPts Visitante\n";
       matches.forEach(m => {
-        text += `${state.weekendLabel}\t${m.category}\t${m.rama}\t${m.time}\t${m.court}\t${m.homeTeam}\t${m.awayTeam}\n`;
+        let res = state.matchResults ? state.matchResults[buildResultEntryKey(m)] : null;
+        let hs = res?.homeScore ?? "";
+        let as = res?.awayScore ?? "";
+        text += `${state.weekendLabel}\t${m.category}\t${m.rama}\t${m.time}\t${m.court}\t${m.homeTeam}\t${m.awayTeam}\t${hs}\t${as}\n`;
       });
       return text;
     }
@@ -1454,9 +1612,12 @@
     function copySelectedJornadaForSheets() {
       let j = getSheetJornadas().find(x => x.id === state.activeJornadaId);
       if (!j) return;
-      let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\n";
+      let text = "Jornada\tCategoría\tRama\tHora\tCancha\tLocal\tVisitante\tPts Local\tPts Visitante\n";
       j.matches.forEach(m => {
-        text += `${j.title}\t${m.category}\t${m.rama}\t${m.time}\t${m.court}\t${m.homeTeam}\t${m.awayTeam}\n`;
+        let res = state.matchResults ? state.matchResults[buildResultEntryKey({ ...m, jornada: j.title })] : null;
+        let hs = res?.homeScore ?? "";
+        let as = res?.awayScore ?? "";
+        text += `${j.title}\t${m.category}\t${m.rama}\t${m.time}\t${m.court}\t${m.homeTeam}\t${m.awayTeam}\t${hs}\t${as}\n`;
       });
       navigator.clipboard.writeText(text);
       showToast('OK');
@@ -1557,17 +1718,286 @@
       btnCopy.classList.remove('hidden');
       document.getElementById('active-jornada-title-label').innerText = `${j.title} (${j.matches.length})`;
 
-      container.innerHTML = j.matches.map(m => `
+      container.innerHTML = j.matches.map(m => {
+        let res = state.matchResults ? state.matchResults[buildResultEntryKey({ ...m, jornada: j.title })] : null;
+        let hasScore = parseScoreNumber(res?.homeScore) !== null && parseScoreNumber(res?.awayScore) !== null;
+        return `
         <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div>
             <span class="font-bold text-slate-900">${m.rama} - ${m.category}</span>
             <span class="text-slate-500 ml-2">${m.time} • ${m.court}</span>
           </div>
           <div class="font-extrabold text-slate-800">
-            ${m.homeTeam} <span class="text-court-600 mx-1">VS</span> ${m.awayTeam}
+            ${m.homeTeam} ${hasScore ? `<span class="text-court-600 mx-1">${res.homeScore} - ${res.awayScore}</span>` : `<span class="text-court-600 mx-1">VS</span>`} ${m.awayTeam}
           </div>
         </div>
-      `).join('');
+      `}).join('');
+    }
+
+    function updateMatchScore(resultKey, side, val) {
+      if (!state.matchResults[resultKey]) {
+        state.matchResults[resultKey] = { homeScore: "", awayScore: "" };
+      }
+      let clean = val === "" ? "" : Math.max(0, parseInt(val, 10));
+      if (val !== "" && isNaN(clean)) return;
+      state.matchResults[resultKey][side] = clean;
+      saveLocalStorage();
+      updateBadges();
+      renderPositionsTablesOnly();
+    }
+
+    function clearMatchResults() {
+      state.matchResults = {};
+      saveLocalStorage();
+      updateBadges();
+      renderPositionsTab();
+      showToast('OK');
+    }
+
+    function computeStandingsByGroup() {
+      let groups = {};
+
+      function ensureTeam(rama, category, teamName) {
+        let r = normalizeKeyPart(rama || "VARONIL").includes("fem") ? "FEMENIL" : "VARONIL";
+        let cat = (category || "General").trim();
+        let groupKey = `${r} - ${cat}`;
+        if (!groups[groupKey]) {
+          groups[groupKey] = { groupName: groupKey, rama: r, category: cat, teams: {} };
+        }
+        let tKey = buildStandingTeamKey(teamName, r, cat);
+        if (!groups[groupKey].teams[tKey]) {
+          groups[groupKey].teams[tKey] = {
+            name: teamName.trim(),
+            rama: r,
+            category: cat,
+            jj: 0,
+            jg: 0,
+            jp: 0,
+            gf: 0,
+            gc: 0,
+            pts: 0,
+            dif: 0
+          };
+        }
+        return groups[groupKey].teams[tKey];
+      }
+
+      Object.values(state.activeTeams || {}).forEach(t => {
+        if (t && t.name && t.category) {
+          ensureTeam(t.rama, t.category, t.name);
+        }
+      });
+
+      let allMatches = getAllRecordedMatches();
+      allMatches.forEach(m => {
+        if (!m.homeTeam || !m.awayTeam) return;
+        let homeRow = ensureTeam(m.rama, m.category, m.homeTeam);
+        let awayRow = ensureTeam(m.rama, m.category, m.awayTeam);
+
+        let rKey = buildResultEntryKey(m);
+        let res = state.matchResults ? state.matchResults[rKey] : null;
+        if (!res) return;
+
+        let hs = parseScoreNumber(res.homeScore);
+        let as = parseScoreNumber(res.awayScore);
+        if (hs === null || as === null) return;
+
+        homeRow.jj += 1;
+        awayRow.jj += 1;
+        homeRow.gf += hs;
+        homeRow.gc += as;
+        awayRow.gf += as;
+        awayRow.gc += hs;
+
+        if (hs > as) {
+          homeRow.jg += 1;
+          homeRow.pts += 2;
+          awayRow.jp += 1;
+          awayRow.pts += 1;
+        } else if (as > hs) {
+          awayRow.jg += 1;
+          awayRow.pts += 2;
+          homeRow.jp += 1;
+          homeRow.pts += 1;
+        } else {
+          homeRow.pts += 1;
+          awayRow.pts += 1;
+        }
+
+        homeRow.dif = homeRow.gf - homeRow.gc;
+        awayRow.dif = awayRow.gf - awayRow.gc;
+      });
+
+      let result = {};
+      Object.entries(groups).forEach(([gName, gData]) => {
+        let sorted = Object.values(gData.teams).sort((a, b) => {
+          if (b.pts !== a.pts) return b.pts - a.pts;
+          if (b.dif !== a.dif) return b.dif - a.dif;
+          if (b.gf !== a.gf) return b.gf - a.gf;
+          return a.name.localeCompare(b.name);
+        });
+        result[gName] = { ...gData, rows: sorted };
+      });
+
+      return result;
+    }
+
+    function renderPositionsTablesOnly() {
+      let fRama = document.getElementById('pos-filter-rama').value;
+      let fCat = document.getElementById('pos-filter-cat').value;
+      let searchTeam = normalizeKeyPart(document.getElementById('pos-search-team').value);
+
+      let grouped = computeStandingsByGroup();
+      let container = document.getElementById('positions-tables-container');
+      let summaryEl = document.getElementById('pos-results-summary');
+
+      let visibleGroups = Object.values(grouped).filter(g => {
+        if (fRama !== 'ALL' && g.rama !== fRama) return false;
+        if (fCat !== 'ALL' && normalizeKeyPart(g.category) !== normalizeKeyPart(fCat)) return false;
+        if (searchTeam && !g.rows.some(r => normalizeKeyPart(r.name).includes(searchTeam))) return false;
+        return g.rows.length > 0;
+      });
+
+      let totalTeams = visibleGroups.reduce((acc, g) => acc + g.rows.length, 0);
+      if (summaryEl) summaryEl.innerText = `${totalTeams}`;
+
+      if (visibleGroups.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-300">0</div>`;
+        return;
+      }
+
+      container.innerHTML = visibleGroups.map(g => {
+        let isFemenil = g.rama === 'FEMENIL';
+        let rowsToRender = searchTeam
+          ? g.rows.filter(r => normalizeKeyPart(r.name).includes(searchTeam))
+          : g.rows;
+
+        return `
+          <div class="space-y-2.5">
+            <div class="${isFemenil ? 'bg-pink-900 text-white' : 'bg-navy-900 text-white'} px-4 py-2.5 rounded-xl font-extrabold text-sm flex items-center justify-between shadow-sm">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded ${isFemenil ? 'bg-pink-600' : 'bg-court-600'} text-[10px] uppercase">${isFemenil ? 'Femenil' : 'Varonil'}</span>
+                <span>${g.category}</span>
+              </div>
+              <span class="text-xs text-slate-200">${rowsToRender.length}</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-navy-900 text-white uppercase tracking-wider text-[11px]">
+                    <th class="p-2.5">Equipo</th>
+                    <th class="p-2.5 text-center">J.J.</th>
+                    <th class="p-2.5 text-center">J.G.</th>
+                    <th class="p-2.5 text-center">J.P.</th>
+                    <th class="p-2.5 text-center">G.F.</th>
+                    <th class="p-2.5 text-center">G.C.</th>
+                    <th class="p-2.5 text-center">PTS.</th>
+                    <th class="p-2.5 text-center">DIF.</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                  ${rowsToRender.map((row, idx) => `
+                    <tr class="hover:bg-slate-50 transition ${idx === 0 ? 'bg-amber-50/40' : ''}">
+                      <td class="p-2.5 font-extrabold text-slate-900">${row.name}</td>
+                      <td class="p-2.5 text-center font-bold">${row.jj}</td>
+                      <td class="p-2.5 text-center font-bold text-emerald-700">${row.jg}</td>
+                      <td class="p-2.5 text-center font-bold text-rose-700">${row.jp}</td>
+                      <td class="p-2.5 text-center">${row.gf}</td>
+                      <td class="p-2.5 text-center">${row.gc}</td>
+                      <td class="p-2.5 text-center font-black text-navy-900">${row.pts}</td>
+                      <td class="p-2.5 text-center font-bold ${row.dif > 0 ? 'text-emerald-700' : (row.dif < 0 ? 'text-rose-700' : 'text-slate-600')}">${row.dif > 0 ? '+' + row.dif : row.dif}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPositionsMatchesList() {
+      let fRama = document.getElementById('pos-filter-rama').value;
+      let fCat = document.getElementById('pos-filter-cat').value;
+      let searchTeam = normalizeKeyPart(document.getElementById('pos-search-team').value);
+
+      let container = document.getElementById('positions-matches-container');
+      let allMatches = getAllRecordedMatches().filter(m => {
+        if (!m.homeTeam || !m.awayTeam) return false;
+        let r = normalizeKeyPart(m.rama || "VARONIL").includes("fem") ? "FEMENIL" : "VARONIL";
+        if (fRama !== 'ALL' && r !== fRama) return false;
+        if (fCat !== 'ALL' && normalizeKeyPart(m.category) !== normalizeKeyPart(fCat)) return false;
+        if (searchTeam && !normalizeKeyPart(m.homeTeam).includes(searchTeam) && !normalizeKeyPart(m.awayTeam).includes(searchTeam)) return false;
+        return true;
+      });
+
+      if (allMatches.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">0</p>`;
+        return;
+      }
+
+      container.innerHTML = allMatches.map(m => {
+        let rKey = buildResultEntryKey(m);
+        let res = state.matchResults[rKey] || { homeScore: "", awayScore: "" };
+        return `
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs">
+            <div class="space-y-0.5">
+              <span class="font-bold text-slate-900">${m.jornada || state.weekendLabel}</span>
+              <span class="text-slate-500 ml-2">${m.rama} - ${m.category}</span>
+            </div>
+            <div class="flex items-center justify-between md:justify-end gap-2">
+              <span class="font-extrabold text-slate-900 text-right">${m.homeTeam}</span>
+              <input
+                type="number"
+                min="0"
+                value="${res.homeScore === undefined ? '' : res.homeScore}"
+                oninput="updateMatchScore('${rKey}', 'homeScore', this.value)"
+                class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center font-extrabold bg-white focus:ring-2 focus:ring-court-500 focus:outline-none"
+                placeholder="0"
+              />
+              <span class="text-court-600 font-black">-</span>
+              <input
+                type="number"
+                min="0"
+                value="${res.awayScore === undefined ? '' : res.awayScore}"
+                oninput="updateMatchScore('${rKey}', 'awayScore', this.value)"
+                class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center font-extrabold bg-white focus:ring-2 focus:ring-court-500 focus:outline-none"
+                placeholder="0"
+              />
+              <span class="font-extrabold text-slate-900">${m.awayTeam}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPositionsTab() {
+      populateCategoryDropdowns();
+      renderPositionsTablesOnly();
+      renderPositionsMatchesList();
+      lucide.createIcons();
+    }
+
+    function copyStandingsForGoogleSheets() {
+      let fRama = document.getElementById('pos-filter-rama').value;
+      let fCat = document.getElementById('pos-filter-cat').value;
+      let grouped = computeStandingsByGroup();
+      let lines = ["Equipo\tJ.J.\tJ.G.\tJ.P.\tG.F.\tG.C.\tPTS.\tDIF."];
+
+      Object.values(grouped).forEach(g => {
+        if (fRama !== 'ALL' && g.rama !== fRama) return;
+        if (fCat !== 'ALL' && normalizeKeyPart(g.category) !== normalizeKeyPart(fCat)) return;
+        g.rows.forEach(row => {
+          lines.push(`${row.name}\t${row.jj}\t${row.jg}\t${row.jp}\t${row.gf}\t${row.gc}\t${row.pts}\t${row.dif}`);
+        });
+      });
+
+      if (lines.length === 1) {
+        showToast("0", "error");
+        return;
+      }
+      navigator.clipboard.writeText(lines.join("\n"));
+      showToast('OK');
     }
 
     function saveLocalStorage() {
@@ -1579,6 +2009,7 @@
         weekendLabel: state.weekendLabel,
         forcedMatches: state.forcedMatches,
         currentSchedule: state.currentSchedule,
+        matchResults: state.matchResults,
         activeJornadaId: state.activeJornadaId
       }));
     }
@@ -1595,6 +2026,7 @@
           state.weekendLabel = parsed.weekendLabel || state.weekendLabel;
           state.forcedMatches = parsed.forcedMatches || [];
           state.currentSchedule = parsed.currentSchedule || [];
+          state.matchResults = parsed.matchResults || {};
           state.activeJornadaId = parsed.activeJornadaId || null;
           state.days = ["Sábado"];
         } catch (e) {}
@@ -1609,7 +2041,8 @@
         rules: state.rules,
         weekendLabel: state.weekendLabel,
         forcedMatches: state.forcedMatches,
-        currentSchedule: state.currentSchedule
+        currentSchedule: state.currentSchedule,
+        matchResults: state.matchResults
       }, null, 2));
       let a = document.createElement('a');
       a.href = dataStr;
@@ -1625,7 +2058,7 @@
       reader.onload = function(evt) {
         try {
           let parsed = JSON.parse(evt.target.result);
-          state = { ...state, ...parsed, activeTeams: state.activeTeams };
+          state = { ...state, ...parsed, activeTeams: state.activeTeams, matchResults: parsed.matchResults || state.matchResults };
           state.days = ["Sábado"];
           saveLocalStorage();
           renderAll();
