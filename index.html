@@ -710,8 +710,9 @@
 
         let jKey = normalizeKeyPart(jornadaTitle);
         if (!jornadasMap[jKey]) {
+          let safeId = 'sheet_j_' + encodeURIComponent(jKey).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) + '_' + i;
           jornadasMap[jKey] = {
-            id: 'sheet_j_' + btoa(unescape(encodeURIComponent(jKey))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) + '_' + i,
+            id: safeId,
             title: jornadaTitle,
             date: "Sheet",
             matches: []
