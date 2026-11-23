@@ -464,9 +464,38 @@
     function parseScoreNumber(rawVal) {
       if (rawVal === null || rawVal === undefined) return null;
       let str = String(rawVal).trim();
-      if (str === "") return null;
+      if (str === "" || str.includes("/") || str.includes("-") || str.includes(":")) return null;
+      if (!/^\d+$/.test(str)) return null;
       let num = parseInt(str, 10);
       return (!isNaN(num) && num >= 0) ? num : null;
+    }
+
+    function resolveScoreColumns(cols, headers, startRow, idxPtsLocal, idxPtsVisit) {
+      let localCandidates = [];
+      headers.forEach((h, i) => {
+        if ((h.includes('pts') || h.includes('puntos') || h.includes('marcador') || h.includes('score') || h.includes('goles')) &&
+            (h.includes('local') || h.includes('home') || h.includes('1') || h.includes('eq1'))) {
+          localCandidates.push(i);
+        }
+      });
+      if (idxPtsLocal >= 0 && !localCandidates.includes(idxPtsLocal)) {
+        localCandidates.push(idxPtsLocal);
+      }
+
+      let chosenLocal = null;
+      for (let idx of localCandidates) {
+        let val = parseScoreNumber(cols[idx]);
+        if (val !== null) {
+          chosenLocal = val;
+          break;
+        }
+      }
+      if (chosenLocal === null && localCandidates.length > 0) {
+        chosenLocal = parseScoreNumber(cols[localCandidates[localCandidates.length - 1]]);
+      }
+
+      let chosenVisit = idxPtsVisit >= 0 ? parseScoreNumber(cols[idxPtsVisit]) : null;
+      return { homeScore: chosenLocal, awayScore: chosenVisit };
     }
 
     function normalizeTimeToAllowedWindow(rawTime) {
@@ -844,8 +873,7 @@
           awayClub: awayTeam
         };
 
-        let hs = idxPtsLocal >= 0 ? parseScoreNumber(cols[idxPtsLocal]) : null;
-        let as = idxPtsVisit >= 0 ? parseScoreNumber(cols[idxPtsVisit]) : null;
+        let { homeScore: hs, awayScore: as } = resolveScoreColumns(cols, headers, startRow, idxPtsLocal, idxPtsVisit);
         if (hs !== null && as !== null) {
           resultsFromSheet[buildResultEntryKey(matchObj)] = { homeScore: hs, awayScore: as };
         }
@@ -1628,6 +1656,14 @@
         return { sent: false };
       }
       try {
+        let enrichedMatches = matches.map(m => {
+          let res = state.matchResults ? state.matchResults[buildResultEntryKey({ ...m, jornada: jornadaTitle })] : null;
+          return {
+            ...m,
+            ptsLocal: res?.homeScore ?? "",
+            ptsVisitante: res?.awayScore ?? ""
+          };
+        });
         await fetch(SHEETS_SAVE_WEBHOOK_URL, {
           method: "POST",
           mode: "no-cors",
@@ -1635,7 +1671,7 @@
           body: JSON.stringify({
             sheetName: SHEETS_TARGET_TAB,
             jornada: jornadaTitle,
-            matches: matches
+            matches: enrichedMatches
           })
         });
         return { sent: true };
