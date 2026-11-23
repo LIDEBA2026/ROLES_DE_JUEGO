@@ -346,7 +346,7 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'lideba_sheets_only_v1';
+    const STORAGE_KEY = 'lideba_sheets_only_v2';
     const LIVE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRjdrdk1PbdVZszD9aKiZFqb4eflydLxFnGeNN5xhIgivmm9oRfye7qtj5RYKY7hrfOtwoXnXRjTbGb/pub?output=csv";
     const SAVED_ROLES_CSV_URL = "";
     const SHEETS_SAVE_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxKcXGmW37qW_TS7SRuiRhaTYVxfMy5r_MaNi8f5FXX90HmnEB42grWOAOeBUNB2Z9W/exec";
@@ -423,7 +423,10 @@
       document.getElementById(`tab-${tabId}`).classList.remove('hidden');
       document.getElementById(`tab-btn-${tabId}`).className = "tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap bg-court-600 text-white shadow";
       if (tabId === 'schedule') renderScheduleTab();
-      if (tabId === 'standings') renderHistoryTab();
+      if (tabId === 'standings') {
+        syncSavedRolesFromSheet(false);
+        renderHistoryTab();
+      }
       lucide.createIcons();
     }
 
@@ -537,7 +540,7 @@
         let timer = setTimeout(() => {
           cleanup();
           resolve(null);
-        }, 6000);
+        }, 7000);
 
         function cleanup() {
           clearTimeout(timer);
@@ -549,6 +552,7 @@
           cleanup();
           if (Array.isArray(data)) resolve(data);
           else if (data && Array.isArray(data.rows)) resolve(data.rows);
+          else if (data && Array.isArray(data.data)) resolve(data.data);
           else if (data && Array.isArray(data.matches)) resolve(data.matches);
           else resolve(null);
         };
@@ -561,6 +565,30 @@
         };
         document.body.appendChild(script);
       });
+    }
+
+    async function fetchSavedRolesViaDirectGet() {
+      if (!SHEETS_SAVE_WEBHOOK_URL || SHEETS_SAVE_WEBHOOK_URL.includes("PEGA_AQUI")) {
+        return null;
+      }
+      try {
+        let sep = SHEETS_SAVE_WEBHOOK_URL.includes('?') ? '&' : '?';
+        let res = await fetch(`${SHEETS_SAVE_WEBHOOK_URL}${sep}sheet=${encodeURIComponent(SHEETS_TARGET_TAB)}&_t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        let text = await res.text();
+        if (!text) return null;
+        let trimmed = text.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+          let json = JSON.parse(trimmed);
+          if (Array.isArray(json)) return parseSavedRolesRowsArray(json);
+          if (Array.isArray(json.rows)) return parseSavedRolesRowsArray(json.rows);
+          if (Array.isArray(json.data)) return parseSavedRolesRowsArray(json.data);
+          if (Array.isArray(json.matches)) return parseSavedRolesRowsArray(json.matches);
+        }
+        return parseSavedRolesCSV(trimmed);
+      } catch (e) {
+        return null;
+      }
     }
 
     function parseCSVLine(line) {
@@ -752,22 +780,35 @@
             }
           }
         }
+      } catch (e) {}
 
-        if (!parsed) {
-          let csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL, SHEETS_TARGET_TAB);
-          if (csvText && csvText.trim().length > 0) {
-            parsed = parseSavedRolesCSV(csvText);
-          }
+      if (!parsed || parsed.totalMatches === 0) {
+        let directParsed = await fetchSavedRolesViaDirectGet();
+        if (directParsed && directParsed.validResponse && (directParsed.totalMatches > 0 || !parsed)) {
+          parsed = directParsed;
         }
-      } catch (e) {
-        parsed = null;
       }
 
-      if (!parsed) {
+      if (!parsed || parsed.totalMatches === 0) {
         let appScriptRows = await fetchSavedRolesViaAppsScript();
         if (appScriptRows !== null) {
-          parsed = parseSavedRolesRowsArray(appScriptRows);
+          let scriptParsed = parseSavedRolesRowsArray(appScriptRows);
+          if (scriptParsed.validResponse && (scriptParsed.totalMatches > 0 || !parsed)) {
+            parsed = scriptParsed;
+          }
         }
+      }
+
+      if (!parsed || parsed.totalMatches === 0) {
+        try {
+          let csvText = await fetchSheetViaJsonp(LIVE_SHEET_CSV_URL, SHEETS_TARGET_TAB);
+          if (csvText && csvText.trim().length > 0) {
+            let gvizParsed = parseSavedRolesCSV(csvText);
+            if (gvizParsed.validResponse && (gvizParsed.totalMatches > 0 || !parsed)) {
+              parsed = gvizParsed;
+            }
+          }
+        } catch (e) {}
       }
 
       if (parsed && parsed.validResponse) {
@@ -778,8 +819,11 @@
         sheetPlayedMatchupsCount = parsed.counts || {};
         sheetSavedJornadas = parsed.jornadas || [];
 
-        if (state.activeJornadaId && !getSheetJornadas().some(j => j.id === state.activeJornadaId)) {
-          state.activeJornadaId = getSheetJornadas()[0]?.id || null;
+        if (!state.activeJornadaId && sheetSavedJornadas.length > 0) {
+          state.activeJornadaId = sheetSavedJornadas[0].id;
+          saveLocalStorage();
+        } else if (state.activeJornadaId && !sheetSavedJornadas.some(j => j.id === state.activeJornadaId)) {
+          state.activeJornadaId = sheetSavedJornadas[0]?.id || null;
           saveLocalStorage();
         }
 
@@ -828,7 +872,6 @@
           let hadPreviousData = lastSheetSignature !== "";
           lastSheetSignature = sig;
           state.activeTeams = teamsFromSheet;
-          saveLocalStorage();
           populateCategoryDropdowns();
           renderWeekendClubs();
           updateBadges();
